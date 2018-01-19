@@ -10,6 +10,7 @@ import codecs
 import unicodecsv as csv
 import pandas as pd
 import string
+import datetime
 
 #################################################################
 #
@@ -75,12 +76,14 @@ if ((cur_version_major != req_version_major) or (cur_version_minor != req_versio
 #
 # Parse command line arguments
 #
+cloudBilling = False
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-u","--userID",required=False,help="User IBM Cloud ID")
 parser.add_argument("-p","--pwd",required=False,help="User IBM Cloud password")
 parser.add_argument("-t","--token",required=False,help="IBM Cloud Token")
+parser.add_argument("-b","--billing",action="store_true",default=False,dest="boolean_flag",help="Dump billing data")
 #
 # Grab the arguments off the command line
 #
@@ -89,6 +92,12 @@ args = parser.parse_args()
 cloudUser = args.userID
 cloudPwd = args.pwd
 cloudToken = args.token
+if args.boolean_flag:
+    cloudBilling = True
+#
+# Calculate the current date
+#
+now = datetime.datetime.now()
 
 #
 # Output debugging data
@@ -96,7 +105,9 @@ cloudToken = args.token
 if (DEBUG):
     outputLog.write("User ID is - " + str(cloudUser) + "\n")
     outputLog.write("User password is - " + str(cloudPwd) + "\n")
-    outputLog.write("Tokens is - " + str(cloudToken) + "\n\n")
+    outputLog.write("Tokens is - " + str(cloudToken) + "\n")
+    outputLog.write("Billing flag is - " + str(cloudBilling) + "\n" )
+    outputLog.write("Current date is - " + str(now.strftime("%Y")) + "-" + str(now.strftime("%m")) + "\n\n")
 #
 #################################################################
 #  ROUTINES
@@ -206,6 +217,40 @@ def closeTextFile(textfile):
 
 #################################################################
 #
+# Get date in YYYY-MM format, and return the previous month in
+# the same YYYY-MM format
+#
+def getPrevMonth(datestr):
+    #
+    # Pull out the numeric year and month
+    #
+    thisMonth = val(datestr[5:6])
+    thisYear = val(datestr[0:3])
+    #
+    # Subtract one from the month
+    #
+    thisMonth = thisMonth - 1
+    if (thisMonth == 0 ):
+        thisMonth = 12
+        thisYear = thisYear -1
+    #
+    # Now convert those values back to string in the proper format
+    #
+    if (thisMonth < 10):
+        #
+        # Have to zero pad the month
+        #
+        newdatestr = str(thisYear) + "-0" + str(thisMonth)
+    else:
+        #
+        # No need to zero pad
+        #
+        newdatestr = str(thisYear) + "-" + str(thisMonth)
+    #
+    return newdatestr
+
+#################################################################
+#
 # Find Defaults - take the output from a BX target comand and populate the default
 #                 settings for the IBM Cloud
 #
@@ -264,8 +309,8 @@ def shortAcctName():
     #
     # Execute the bx target command to get current default values
     #
-    if (len(envAccount) > 6):
-        shortName = str(envAccount[0:5])
+    if (len(envAccount) > 7):
+        shortName = str(envAccount[0:6])
     else:
         shortName = str(envAccount)
     #
@@ -657,8 +702,38 @@ def bx_account_orgs():
     exec_menu(choice)
     return
 
+# Get billing summary
+def bx_billing_summary(datestr):
+    #
+    # Run the command to show all orgs
+    #
+    cmd = "bx billing account-usage"
+    errout = ExecCmd_Output(cmd)
+    #
+    # Just dump output
+    #
+    writeTextFile(outfile,"")
+    writeTextFile(outfile,errout)
+    writeTextFile(outfile,"")
+    #
+    closeTextFile(outfile)
+    #
+    # Tell user where to find the file
+    #
+    print ("")
+    print ("Current billing summary in file -> " + str(filename))
+    print ("")
+    #
+    # Print menu bottom
+    #
+    print ("9. Back")
+    print ("0. Quit")
+    choice = raw_input(" >>  ")
+    exec_menu(choice)
+    return
+
 # Show billing summary
-def bx_billing_summary():
+def show_billing_summary():
     print ("Building current billing summary \n")
     #
     # Open an output file for this
@@ -692,6 +767,49 @@ def bx_billing_summary():
     choice = raw_input(" >>  ")
     exec_menu(choice)
     return
+
+# Show billing summary - output in json
+def bx_billing_summary_json():
+    print ("Building current billing summary (in JSON) \n")
+    #
+    # Open an output file for this
+    #
+    filename = str(shortAcctName()) + "_billing_summary.json"
+    outfile = openTextFile(filename)
+    #
+    # Run the command to show all orgs
+    #
+    cmd = "bx billing account-usage --json"
+    errout = ExecCmd_Output(cmd)
+    #
+    # Just dump output to json file
+    #
+    writeTextFile(outfile,errout)
+    #
+    closeTextFile(outfile)
+    #
+    # Tell user where to find the file
+    #
+    print ("")
+    print ("Current billing summary in file -> " + str(filename))
+    print ("")
+    #
+    # See if this is a batch session
+    #
+    if cloudBilling:
+        #
+        # Batch session, just return
+        #
+        return
+    else:
+        #
+        # Interactive session, print menu bottom
+        #
+        print ("9. Back")
+        print ("0. Quit")
+        choice = raw_input(" >>  ")
+        exec_menu(choice)
+        return
 
 # Show all account orgs
 def bx_billing_detail():
@@ -974,7 +1092,7 @@ menu_actions = {
     'main_menu': main_menu,
     '1': show_default,
     '2': bx_account_orgs,
-    '3': bx_billing_summary,
+    '3': bx_billing_summary_json,
     '4': bx_billing_detail,
     'A': bx_modify_account,
     'D': bx_modify_defaults,
@@ -1001,4 +1119,13 @@ if __name__ == "__main__":
     # Log into the IBM Cloud
     IBMCloudLogin(cloudUser,cloudPwd,cloudToken)
     # Launch main menu
-    main_menu()
+    if cloudBilling:
+        #
+        # Run non-interactive, do billing
+        #
+        bx_billing_summary_json()
+    else:
+        #
+        # Run an interactive session
+        #
+        main_menu()
