@@ -11,6 +11,7 @@ import unicodecsv as csv
 import pandas as pd
 import string
 import datetime
+import re
 
 #################################################################
 #
@@ -98,6 +99,7 @@ if args.boolean_flag:
 # Calculate the current date
 #
 now = datetime.datetime.now()
+todaystr = str(now.strftime("%Y")) + "-" + str(now.strftime("%m"))
 
 #
 # Output debugging data
@@ -184,7 +186,7 @@ def ExecCmd_Output (cmd):
 
 #################################################################
 #
-# Check for proper version of python
+# Open a text file
 #
 def openTextFile(filename):
     #
@@ -195,7 +197,7 @@ def openTextFile(filename):
 
 #################################################################
 #
-# Check for proper version of python
+# Write a line out to a text file
 #
 def writeTextFile(textfile,txtline):
     #
@@ -206,13 +208,161 @@ def writeTextFile(textfile,txtline):
 
 #################################################################
 #
-# Check for proper version of python
+# Close a text file
 #
 def closeTextFile(textfile):
     #
     # Set the global name and filehandle
     #
     stat = textfile.close()
+    return stat
+
+#################################################################
+#
+# Open a text file
+#
+def openCsvFile(filename):
+    #
+    # Set the global name and filehandle
+    #
+    csvFile = csv.writer(open(filename, "w"))
+    return csvFile
+
+#################################################################
+#
+# writeCSVSummaryRecord - Dump a row of account summary data into
+#                           output CSV file
+#
+def writeCSVSummaryRecord(csvFile, inp_1, inp_2, inp_3, inp_4, inp_5, inp_6, inp_7, inp_8, inp_9):
+    #
+    # fileCSV.writerow(('Account ID','Date','Billable','Type','Resource ID','Name','Units','Quantity','Cost'))
+    errout = ""
+    try:
+        col_1 = str(inp_1)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 1 " + str(inp_1) + "\n"
+    try:
+        col_2 = str(inp_2)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 2 " + str(inp_2) + "\n"
+    try:
+        col_3 = str(inp_3)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 3 " + str(inp_3) + "\n"
+    try:
+        col_4 = str(inp_4)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 4 " + str(inp_4) + "\n"
+    try:
+        col_5 = str(inp_5)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 5 " + str(inp_5) + "\n"
+    try:
+        col_6 = str(inp_6)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 6 " + str(inp_6) + "\n"
+    try:
+        col_7 = str(inp_7)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 7 " + str(inp_7) + "\n"
+    try:
+        col_8 = str(inp_8)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 8 " + str(inp_8) + "\n"
+    try:
+        col_9 = str(inp_9)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 9 " + str(inp_9) + "\n"
+    #
+    # Write it out
+    #
+    try:
+        csvFile.writerow([col_1, col_2, col_3, col_4, col_5, col_6, col_7, col_8, col_9])
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode OUTPUT error \n"
+    #
+    # If error, return some error text, otherwise return a null string
+    #
+    return errout
+
+#################################################################
+#
+# writeCSVDetailRecord - Dump a row of account summary data into
+#                           output CSV file
+#
+def writeCSVDetailRecord(csvFile, inp_1, inp_2, inp_3, inp_4, inp_5, inp_6, inp_7, inp_8, inp_9, inp_10, inp_11, inp_12):
+    #
+    # writeCSVDetailRecord (csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,Billable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    errout = ""
+    try:
+        col_1 = str(inp_1)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 1 " + str(inp_1) + "\n"
+    try:
+        col_2 = str(inp_2)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 2 " + str(inp_2) + "\n"
+    try:
+        col_3 = str(inp_3)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 3 " + str(inp_3) + "\n"
+    try:
+        col_4 = str(inp_4)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 4 " + str(inp_4) + "\n"
+    try:
+        col_5 = str(inp_5)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 5 " + str(inp_5) + "\n"
+    try:
+        col_6 = str(inp_6)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 6 " + str(inp_6) + "\n"
+    try:
+        col_7 = str(inp_7)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 7 " + str(inp_7) + "\n"
+    try:
+        col_8 = str(inp_8)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 8 " + str(inp_8) + "\n"
+    try:
+        col_9 = str(inp_9)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 9 " + str(inp_9) + "\n"
+    try:
+        col_10 = str(inp_10)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 10 " + str(inp_10) + "\n"
+    try:
+        col_11 = str(inp_11)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 11 " + str(inp_11) + "\n"
+    try:
+        col_12 = str(inp_12)
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode decode error on column 12 " + str(inp_12) + "\n"
+    #
+    # Write it out
+    #
+    try:
+        csvFile.writerow([col_1, col_2, col_3, col_4, col_5, col_6, col_7, col_8, col_9, col_10, col_11, col_12])
+    except UnicodeDecodeError:
+        errout = "ERROR - Unicode OUTPUT error \n"
+    #
+    # If error, return some error text, otherwise return a null string
+    #
+    return errout
+
+#################################################################
+#
+# Close csv file
+#
+def closeCsvFile(csvFile):
+    #
+    # Set the global name and filehandle
+    #
+    stat = csvFile.close()
     return stat
 
 #################################################################
@@ -224,8 +374,8 @@ def getPrevMonth(datestr):
     #
     # Pull out the numeric year and month
     #
-    thisMonth = val(datestr[5:6])
-    thisYear = val(datestr[0:3])
+    thisMonth = int(datestr[5:7])
+    thisYear = int(datestr[0:4])
     #
     # Subtract one from the month
     #
@@ -309,14 +459,18 @@ def shortAcctName():
     #
     # Execute the bx target command to get current default values
     #
-    if (len(envAccount) > 7):
-        shortName = str(envAccount[0:6])
+    if (len(envAccount) > 10):
+        shortName = str(envAccount[0:9])
     else:
         shortName = str(envAccount)
     #
+    # Change any whitespace to underscores
+    #
+    retName = re.sub('\s+', '_', shortName)
+    #
     # If error, return some error text, otherwise return a null string
     #
-    return shortName
+    return retName
 
 #################################################################
 #
@@ -368,46 +522,6 @@ def buildDataFrame(inpCSVFile):
                 outputLog.write("\n** For " + str(inpCSVFile) + "\n** First Frame Record => " + str(r) + "\n\n")
     #
     return df
-
-#################################################################
-#
-# writeCSVRecord - Dump a row of data into output CSV file
-#
-def writeCSVRecord(csvFile, inp_1, inp_2, inp_3, inp_4, inp_5):
-    #
-    # fileCSV.writerow(('Account Name','UserGUID','USEREmail','Acct Email','Usage'))
-    errout = ""
-    try:
-        col_1 = str(inp_1)
-    except UnicodeDecodeError:
-        errout = "ERROR - Unicode decode error on column 1 " + str(inp_1) + "\n"
-    try:
-        col_2 = str(inp_2)
-    except UnicodeDecodeError:
-        errout = "ERROR - Unicode decode error on column 2 " + str(inp_2) + "\n"
-    try:
-        col_3 = str(inp_3)
-    except UnicodeDecodeError:
-        errout = "ERROR - Unicode decode error on column 3 " + str(inp_3) + "\n"
-    try:
-        col_4 = str(inp_4)
-    except UnicodeDecodeError:
-        errout = "ERROR - Unicode decode error on column 4 " + str(inp_4) + "\n"
-    try:
-        col_5 = str(inp_5)
-    except UnicodeDecodeError:
-        errout = "ERROR - Unicode decode error on column 5 " + str(inp_5) + "\n"
-    #
-    # Write it out
-    #
-    try:
-        csvFile.writerow([col_1, col_2, col_3, col_4, col_5])
-    except UnicodeDecodeError:
-            errout = "ERROR - Unicode OUTPUT error \n"
-    #
-    # If error, return some error text, otherwise return a null string
-    #
-    return errout
 
 #################################################################
 #
@@ -613,6 +727,313 @@ def parseGroupSpaces(myList):
     return retValue
 
 
+
+#################################################################
+#
+# ProcessJsonSummary -  process the JSON account summary info, and
+#                       dump a series of CSV file rows to a data file
+#                       reflecting usage indicated in the JSON account
+#                       summary information.
+#
+def processJsonSummary(jsonout, csvoutfile):
+    #
+    # initialize
+    #
+    stat = ""
+    tmpAcctId = str(jsonout['id'].encode('utf-8','ignore'))
+    tmpDate = str(jsonout['date'].encode('utf-8','ignore'))
+    tmpBillable = ""
+    tmpType = ""
+    tmpResourceID = ""
+    tmpName = ""
+    tmpUnits = ""
+    tmpQuantity = ""
+    tmpCost = ""
+    #
+    # Take input JSON - and process it structure by structure
+    #
+    # Start with non-billable runtimes
+    #
+    #
+    # Loop thru all non-billable runtime entries
+    #
+    for runtimes in jsonout['non_billable_usage']['runtimes']:
+        tmpBillable = "False"
+        tmpType = "runtime"
+        tmpName = str(runtimes['name'].encode('utf-8','ignore'))
+        #
+        for plans in runtimes['plans']:
+            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
+            #
+            for usagefld in plans['usage']:
+                tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                tmpQuantity = str(usagefld['quantity'])
+                tmpCost = str(usagefld['cost'])
+                #
+                # Dump entry to CSV file
+                #
+                stat = writeCSVSummaryRecord(csvoutfile,tmpAcctId,tmpDate,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Loop thru all non-billable container entries
+    #
+    for containers in jsonout['non_billable_usage']['containers']:
+        tmpBillable = "False"
+        tmpType = "containers"
+        tmpName = str(containers['id'].encode('utf-8','ignore'))
+        #
+        for plans in containers['plans']:
+            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
+            #
+            for usagefld in plans['usage']:
+                tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                tmpQuantity = str(usagefld['quantity'])
+                tmpCost = str(usagefld['cost'])
+                #
+                # Dump entry to CSV file
+                #
+                stat = writeCSVSummaryRecord(csvoutfile,tmpAcctId,tmpDate,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Loop thru all non-billable services entries
+    #
+    for svcs in jsonout['non_billable_usage']['services']:
+        tmpBillable = "False"
+        tmpType = "services"
+        tmpName = str(svcs['name'].encode('utf-8','ignore'))
+        #
+        for plans in svcs['plans']:
+            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
+            #
+            for usagefld in plans['usage']:
+                tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                tmpQuantity = str(usagefld['quantity'])
+                tmpCost = str(usagefld['cost'])
+                #
+                # Dump entry to CSV file
+                #
+                stat = writeCSVSummaryRecord(csvoutfile,tmpAcctId,tmpDate,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Now do billable entries
+    #
+    #
+    # Loop thru all billable runtime entries
+    #
+    for runtimes in jsonout['billable_usage']['runtimes']:
+        tmpBillable = "True"
+        tmpType = "runtime"
+        tmpName = str(runtimes['name'].encode('utf-8','ignore'))
+        #
+        for plans in runtimes['plans']:
+            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
+            #
+            for usagefld in plans['usage']:
+                tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                tmpQuantity = str(usagefld['quantity'])
+                tmpCost = str(usagefld['cost'])
+                #
+                # Dump entry to CSV file
+                #
+                stat = writeCSVSummaryRecord(csvoutfile,tmpAcctId,tmpDate,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Loop thru all non-billable container entries
+    #
+    for containers in jsonout['billable_usage']['containers']:
+        tmpBillable = "True"
+        tmpType = "containers"
+        tmpName = str(containers['id'].encode('utf-8','ignore'))
+        #
+        for plans in containers['plans']:
+            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
+            #
+            for usagefld in plans['usage']:
+                tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                tmpQuantity = str(usagefld['quantity'])
+                tmpCost = str(usagefld['cost'])
+                #
+                # Dump entry to CSV file
+                #
+                stat = writeCSVSummaryRecord(csvoutfile,tmpAcctId,tmpDate,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Loop thru all non-billable services entries
+    #
+    for svcs in jsonout['billable_usage']['services']:
+        tmpBillable = "True"
+        tmpType = "services"
+        tmpName = str(svcs['name'].encode('utf-8','ignore'))
+        #
+        for plans in svcs['plans']:
+            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
+            #
+            for usagefld in plans['usage']:
+                tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                tmpQuantity = str(usagefld['quantity'])
+                tmpCost = str(usagefld['cost'])
+                #
+                # Dump entry to CSV file
+                #
+                stat = writeCSVSummaryRecord(csvoutfile,tmpAcctId,tmpDate,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Return list of valid space names
+    #
+    return stat
+
+#################################################################
+#
+# ProcessJsonDetails -  process the JSON account org details info, and
+#                       dump a series of CSV file rows to a data file
+#                       reflecting usage indicated in the JSON account
+#                       org detail information.
+#
+def processJsonDetails(jsonout, csvoutfile):
+    #
+    # initialize
+    #
+    stat = ""
+    tmpAcctId = ""
+    tmpDate = str(jsonout['date'].encode('utf-8','ignore'))
+    tmpRegion = ""
+    tmpOrg = str(jsonout['org'].encode('utf-8','ignore'))
+    tmpSpace = ""
+    tmpBillable = ""
+    tmpType = ""
+    tmpResourceID = ""
+    tmpName = ""
+    tmpUnits = ""
+    tmpQuantity = ""
+    tmpCost = ""
+    # writeCSVDetailRecord (csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,Billable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Take input JSON - and process it structure by structure
+    #
+    # Start with non-billable runtimes
+    #
+    #
+    # Loop thru all non-billable spaces application entries
+    #
+    for myrecs in jsonout['records']:
+        tmpAcctId = str(myrecs['id'].encode('utf-8','ignore'))
+        tmpRegion = str(myrecs['region'].encode('utf-8','ignore'))
+        #
+        for nobillspaces in myrecs['non_billable_usage']['spaces']:
+            tmpBillable = "False"
+            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
+            tmpSpace = str(plans['name'].encode('utf-8','ignore'))
+            #
+            for application in nobillspaces['applications']:
+                tmpName = str(application['name'].encode('utf-8','ignore'))
+                tmpType = "application"
+            
+                for usagefld in application['usage']:
+                    tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                    tmpQuantity = str(usagefld['quantity'])
+                    tmpCost = str(usagefld['cost'])
+                    #
+                    # Dump entry to CSV file
+                    #
+                    stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Loop thru all non-billable container entries
+    #
+    for containers in jsonout['non_billable_usage']['containers']:
+        tmpBillable = "False"
+        tmpType = "containers"
+        tmpName = str(containers['id'].encode('utf-8','ignore'))
+        #
+        for plans in containers['plans']:
+            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
+            #
+            for usagefld in plans['usage']:
+                tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                tmpQuantity = str(usagefld['quantity'])
+                tmpCost = str(usagefld['cost'])
+                #
+                # Dump entry to CSV file
+                #
+                stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Loop thru all non-billable services entries
+    #
+    for svcs in jsonout['non_billable_usage']['services']:
+        tmpBillable = "False"
+        tmpType = "services"
+        tmpName = str(svcs['name'].encode('utf-8','ignore'))
+        #
+        for plans in svcs['plans']:
+            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
+            #
+            for usagefld in plans['usage']:
+                tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                tmpQuantity = str(usagefld['quantity'])
+                tmpCost = str(usagefld['cost'])
+                #
+                # Dump entry to CSV file
+                #
+                stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Now do billable entries
+    #
+    #
+    # Loop thru all billable runtime entries
+    #
+    for runtimes in jsonout['billable_usage']['runtimes']:
+        tmpBillable = "True"
+        tmpType = "runtime"
+        tmpName = str(runtimes['name'].encode('utf-8','ignore'))
+        #
+        for plans in runtimes['plans']:
+            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
+            #
+            for usagefld in plans['usage']:
+                tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                tmpQuantity = str(usagefld['quantity'])
+                tmpCost = str(usagefld['cost'])
+                #
+                # Dump entry to CSV file
+                #
+                stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Loop thru all non-billable container entries
+    #
+    for containers in jsonout['billable_usage']['containers']:
+        tmpBillable = "True"
+        tmpType = "containers"
+        tmpName = str(containers['id'].encode('utf-8','ignore'))
+        #
+        for plans in containers['plans']:
+            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
+            #
+            for usagefld in plans['usage']:
+                tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                tmpQuantity = str(usagefld['quantity'])
+                tmpCost = str(usagefld['cost'])
+                #
+                # Dump entry to CSV file
+                #
+                stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Loop thru all non-billable services entries
+    #
+    for svcs in jsonout['billable_usage']['services']:
+        tmpBillable = "True"
+        tmpType = "services"
+        tmpName = str(svcs['name'].encode('utf-8','ignore'))
+        #
+        for plans in svcs['plans']:
+            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
+            #
+            for usagefld in plans['usage']:
+                tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                tmpQuantity = str(usagefld['quantity'])
+                tmpCost = str(usagefld['cost'])
+                #
+                # Dump entry to CSV file
+                #
+                stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Return list of valid space names
+    #
+    return stat
+
+
 # =======================
 #     MENUS FUNCTIONS
 # =======================
@@ -627,6 +1048,8 @@ def main_menu():
     print ("2. Show All account Orgs")
     print ("3. Show Billing Summary for this month")
     print ("4. Show Billing Detail by Org for this month")
+    print ("5. Show Billing Summary for past 12 months")
+    print ("6. Show Billing Detail by Org for past 12 months")
     print ("\n0. Quit")
     choice = raw_input(" >>  ")
     exec_menu(choice)
@@ -703,34 +1126,40 @@ def bx_account_orgs():
     return
 
 # Get billing summary
-def bx_billing_summary(datestr):
+def bx_billing_summary(datestr,jsonflag):
     #
     # Run the command to show all orgs
     #
-    cmd = "bx billing account-usage"
+    if jsonflag:
+        cmd = "bx billing account-usage -d " + str(datestr) + " --json"
+    else:
+        cmd = "bx billing account-usage -d " + str(datestr)
+    #
+    # Execute command
+    #
     errout = ExecCmd_Output(cmd)
     #
-    # Just dump output
+    # Just return results
     #
-    writeTextFile(outfile,"")
-    writeTextFile(outfile,errout)
-    writeTextFile(outfile,"")
+    return errout
+
+# Show all account orgs
+def bx_billing_detail(orgname,datestr,jsonflag):
     #
-    closeTextFile(outfile)
+    # Run the command to show all orgs
     #
-    # Tell user where to find the file
+    if jsonflag:
+        cmd = "bx billing org-usage " + str(orgname) + " -d " + str(datestr) + " -r all --json"
+    else:
+        cmd = "bx billing org-usage " + str(orgname) + " -d " + str(datestr) + " -r all"
     #
-    print ("")
-    print ("Current billing summary in file -> " + str(filename))
-    print ("")
+    # Execute command
     #
-    # Print menu bottom
+    errout = ExecCmd_Output(cmd)
     #
-    print ("9. Back")
-    print ("0. Quit")
-    choice = raw_input(" >>  ")
-    exec_menu(choice)
-    return
+    # Just return results
+    #
+    return errout
 
 # Show billing summary
 def show_billing_summary():
@@ -743,8 +1172,7 @@ def show_billing_summary():
     #
     # Run the command to show all orgs
     #
-    cmd = "bx billing account-usage"
-    errout = ExecCmd_Output(cmd)
+    errout = bx_billing_summary(todaystr,False)
     #
     # Just dump output
     #
@@ -769,7 +1197,7 @@ def show_billing_summary():
     return
 
 # Show billing summary - output in json
-def bx_billing_summary_json():
+def show_billing_summary_json():
     print ("Building current billing summary (in JSON) \n")
     #
     # Open an output file for this
@@ -777,14 +1205,31 @@ def bx_billing_summary_json():
     filename = str(shortAcctName()) + "_billing_summary.json"
     outfile = openTextFile(filename)
     #
+    # Open CSV file and Write CSV file column headeings
+    #
+    csvfilename = str(shortAcctName()) + "_billing_summary.csv"
+    csvoutfile = openCsvFile(csvfilename)
+    writeCSVSummaryRecord(csvoutfile, 'Account ID','Date','Billable','Type','Resource ID','Name','Units','Quantity','Cost')
+    #
     # Run the command to show all orgs
     #
-    cmd = "bx billing account-usage --json"
-    errout = ExecCmd_Output(cmd)
+    errout = bx_billing_summary(todaystr,True)
     #
     # Just dump output to json file
     #
     writeTextFile(outfile,errout)
+    #
+    # Store json in a data structure - we'll dig into it later
+    #
+    jsonout = json.loads(errout)
+    #
+    # Add in a date field
+    #
+    jsonout['date'] = str(todaystr)
+    #
+    # Process JSON account summary data
+    #
+    processJsonSummary(jsonout, csvoutfile)
     #
     closeTextFile(outfile)
     #
@@ -792,6 +1237,7 @@ def bx_billing_summary_json():
     #
     print ("")
     print ("Current billing summary in file -> " + str(filename))
+    print ("Current billing summary in file -> " + str(csvfilename))
     print ("")
     #
     # See if this is a batch session
@@ -812,7 +1258,7 @@ def bx_billing_summary_json():
         return
 
 # Show all account orgs
-def bx_billing_detail():
+def show_billing_detail():
     print ("Building current billing details by org \n")
     #
     # Open an output file for this
@@ -835,8 +1281,7 @@ def bx_billing_detail():
         #
         # Run the command to show org usage
         #
-        cmd = "bx billing org-usage " + str(eachOption)
-        errout = ExecCmd_Output(cmd)
+        errout = bx_billing_detail(str(eachOption),todaystr,False)
         #
         # Just dump output
         #
@@ -863,6 +1308,242 @@ def bx_billing_detail():
     exec_menu(choice)
     return
 
+# Show billing details - output in json
+def show_billing_detail_json():
+    global todaystr
+    print ("Building current billing details by org (in JSON) \n")
+    #
+    # Open an output file for this
+    #
+    filename = str(shortAcctName()) + "_billing_by_org.json"
+    outfile = openTextFile(filename)
+    #
+    # Open CSV file and Write CSV file column headeings
+    #
+    csvfilename = str(shortAcctName()) + "_billing_by_org.csv"
+    csvoutfile = openCsvFile(csvfilename)
+    writeCSVDetailRecord(csvoutfile, 'Account ID','Date','Region','Org','Space','Billable','Type','Resource ID','Name','Units','Quantity','Cost')
+    #
+    # Run the command to show all orgs
+    #
+    cmd = "bx account orgs"
+    errout = ExecCmd_Output(cmd)
+    #
+    # Parse the accounts provided, returns a list of orgs
+    #
+    optionList = parseAccountOrgs(errout)
+    firstLine = True
+    #
+    # Loop thru entries in org list
+    #
+    for eachOption in optionList:
+        #
+        # Run the command to show org usage
+        #
+        fixout = bx_billing_detail(str(eachOption),todaystr,True)
+        #
+        # Add org name and date
+        #
+        errout = "{ \"org\": \"" + str(eachOption) + "\",\n  \"date\": \"" + str(todaystr) + "\",\n  \"records\": " + fixout + "} \n"
+        #
+        # Just dump output to json file
+        #
+        if firstLine:
+            writeTextFile(outfile,errout)
+            firstLine = False
+        else:
+            #
+            # Need to split up the JSON elements with commas
+            #
+            fixedout = ",\n" + errout
+            writeTextFile(outfile,fixedout)
+        #
+        # Store json in a data structure - we'll dig into it later
+        #
+        jsonout = json.loads(errout)
+        #
+        # Add in a date field
+        #
+        print ("Org is - " + str(eachOption))
+        print ("JSON is -" + str(jsonout))
+        print ("======================")
+        #jsonout['date'] = str(todaystr)
+        #jsonout['org'] = str(eachOption)
+        #
+        # Process JSON account details data
+        #
+        processJsonDetails(jsonout, csvoutfile)
+    #
+    # Close the output
+    #
+    closeTextFile(outfile)
+    #
+    # Tell user where to find the file
+    #
+    print ("")
+    print ("Current billing details in file -> " + str(filename))
+    print ("Current billing details in file -> " + str(csvfilename))
+    print ("")
+    #
+    # See if this is a batch session
+    #
+    if cloudBilling:
+        #
+        # Batch session, just return
+        #
+        return
+    else:
+        #
+        # Interactive session, print menu bottom
+        #
+        print ("9. Back")
+        print ("0. Quit")
+        choice = raw_input(" >>  ")
+        exec_menu(choice)
+        return
+
+# Show billing summary - output in json
+def show_annual_billing_detail_json():
+    global todaystr
+    print ("Building current ANNUAL billing details by org (in JSON) \n")
+    #
+    # Open an output file for this
+    #
+    filename = str(shortAcctName()) + "_annual_billing_by_org.json"
+    outfile = openTextFile(filename)
+    #
+    # Run the command to show all orgs
+    #
+    cmd = "bx account orgs"
+    errout = ExecCmd_Output(cmd)
+    #
+    # Parse the accounts provided, returns a list of orgs
+    #
+    optionList = parseAccountOrgs(errout)
+    #
+    # Loop thru entries in org list
+    #
+    for eachOption in optionList:
+        #
+        # Loop thru past 12 months
+        #
+        currdate = todaystr
+        for months in range(12):
+            #
+            # Run for current date
+            #
+            errout = bx_billing_detail(str(eachOption),currdate,True)
+            #
+            # Just dump output to json file
+            #
+            writeTextFile(outfile,errout)
+            #
+            # Change date to previous month
+            #
+            currdate = getPrevMonth(currdate)
+            # End loop thru months
+        # end loop thru account orgs
+    #
+    # Close the output
+    #
+    closeTextFile(outfile)
+    #
+    # Tell user where to find the file
+    #
+    print ("")
+    print ("Current annual billing summary in file -> " + str(filename))
+    print ("")
+    #
+    # See if this is a batch session
+    #
+    if cloudBilling:
+        #
+        # Batch session, just return
+        #
+        return
+    else:
+        #
+        # Interactive session, print menu bottom
+        #
+        print ("9. Back")
+        print ("0. Quit")
+        choice = raw_input(" >>  ")
+        exec_menu(choice)
+        return
+
+# Show billing summary - output in json and csv
+def show_annual_billing_summary_json():
+    global todaystr
+    print ("Building current ANNUAL billing summary (in JSON) \n")
+    #
+    # Open an output file for this
+    #
+    filename = str(shortAcctName()) + "_annual_billing_summary.json"
+    outfile = openTextFile(filename)
+    #
+    # Open CSV file and Write CSV file column headeings
+    #
+    csvfilename = str(shortAcctName()) + "_annual_billing_summary.csv"
+    csvoutfile = openCsvFile(csvfilename)
+    writeCSVSummaryRecord(csvoutfile, 'Account ID','Date','Billable','Type','Resource ID','Name','Units','Quantity','Cost')
+    #
+    # Loop thru past 12 months
+    #
+    currdate = todaystr
+    for months in range(12):
+        #
+        # Run for current date
+        #
+        errout = bx_billing_summary(currdate,True)
+        #
+        # Just dump output to json file
+        #
+        writeTextFile(outfile,errout)
+        #
+        # Store json in a data structure - we'll dig into it next
+        #
+        jsonout = json.loads(errout)
+        #
+        # Add in a date field
+        #
+        jsonout['date'] = str(currdate)
+        #
+        # Process JSON account summary data
+        #
+        processJsonSummary(jsonout, csvoutfile)
+        #
+        # Change date to previous month
+        #
+        currdate = getPrevMonth(currdate)
+    # End loop thru months
+    #
+    closeTextFile(outfile)
+    #
+    # Tell user where to find the file
+    #
+    print ("")
+    print ("Current billing summary in file -> " + str(filename))
+    print ("Current billing summary in file -> " + str(csvfilename))
+    print ("")
+    #
+    # See if this is a batch session
+    #
+    if cloudBilling:
+        #
+        # Batch session, just return
+        #
+        return
+    else:
+        #
+        # Interactive session, print menu bottom
+        #
+        print ("9. Back")
+        print ("0. Quit")
+        choice = raw_input(" >>  ")
+        exec_menu(choice)
+        return
+
+#
 # Modify default settings
 def bx_modify_defaults():
     print ("Current IBM Cloud Default Settings \n")
@@ -1092,8 +1773,10 @@ menu_actions = {
     'main_menu': main_menu,
     '1': show_default,
     '2': bx_account_orgs,
-    '3': bx_billing_summary_json,
-    '4': bx_billing_detail,
+    '3': show_billing_summary_json,
+    '4': show_billing_detail_json,
+    '5': show_annual_billing_summary_json,
+    '6': show_annual_billing_detail_json,
     'A': bx_modify_account,
     'D': bx_modify_defaults,
     'G': bx_modify_group,
@@ -1123,7 +1806,7 @@ if __name__ == "__main__":
         #
         # Run non-interactive, do billing
         #
-        bx_billing_summary_json()
+        show_annual_billing_detail_json()
     else:
         #
         # Run an interactive session
