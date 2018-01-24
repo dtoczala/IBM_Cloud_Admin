@@ -468,6 +468,10 @@ def shortAcctName():
     #
     retName = re.sub('\s+', '_', shortName)
     #
+    # Change any non-alphanumeric to underscores
+    #
+    retName = re.sub('\W+', '_', shortName)
+    #
     # If error, return some error text, otherwise return a null string
     #
     return retName
@@ -904,7 +908,7 @@ def processJsonDetails(jsonout, csvoutfile):
     #
     # Take input JSON - and process it structure by structure
     #
-    # Start with non-billable runtimes
+    # Start with non-billable
     #
     #
     # Loop thru all non-billable spaces application entries
@@ -913,15 +917,21 @@ def processJsonDetails(jsonout, csvoutfile):
         tmpAcctId = str(myrecs['id'].encode('utf-8','ignore'))
         tmpRegion = str(myrecs['region'].encode('utf-8','ignore'))
         #
+        # CLI is returning "blanK" entries for details records, and these
+        # have null values for spaces.  Jump out when this happens.
+        #
+        if (myrecs['non_billable_usage']['spaces'] is None):
+            continue
+        #
         for nobillspaces in myrecs['non_billable_usage']['spaces']:
             tmpBillable = "False"
-            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
-            tmpSpace = str(plans['name'].encode('utf-8','ignore'))
+            tmpResourceID = str(nobillspaces['id'].encode('utf-8','ignore'))
+            tmpSpace = str(nobillspaces['name'].encode('utf-8','ignore'))
             #
             for application in nobillspaces['applications']:
                 tmpName = str(application['name'].encode('utf-8','ignore'))
                 tmpType = "application"
-            
+                #
                 for usagefld in application['usage']:
                     tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
                     tmpQuantity = str(usagefld['quantity'])
@@ -931,103 +941,162 @@ def processJsonDetails(jsonout, csvoutfile):
                     #
                     stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
     #
-    # Loop thru all non-billable container entries
+    # Loop thru all non-billable spaces containers entries
     #
-    for containers in jsonout['non_billable_usage']['containers']:
-        tmpBillable = "False"
-        tmpType = "containers"
-        tmpName = str(containers['id'].encode('utf-8','ignore'))
+    for myrecs in jsonout['records']:
+        tmpAcctId = str(myrecs['id'].encode('utf-8','ignore'))
+        tmpRegion = str(myrecs['region'].encode('utf-8','ignore'))
         #
-        for plans in containers['plans']:
-            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
-            #
-            for usagefld in plans['usage']:
-                tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
-                tmpQuantity = str(usagefld['quantity'])
-                tmpCost = str(usagefld['cost'])
-                #
-                # Dump entry to CSV file
-                #
-                stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
-    #
-    # Loop thru all non-billable services entries
-    #
-    for svcs in jsonout['non_billable_usage']['services']:
-        tmpBillable = "False"
-        tmpType = "services"
-        tmpName = str(svcs['name'].encode('utf-8','ignore'))
+        # CLI is returning "blanK" entries for details records, and these
+        # have null values for spaces.  Jump out when this happens.
         #
-        for plans in svcs['plans']:
-            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
-            #
-            for usagefld in plans['usage']:
-                tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
-                tmpQuantity = str(usagefld['quantity'])
-                tmpCost = str(usagefld['cost'])
-                #
-                # Dump entry to CSV file
-                #
-                stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
-    #
-    # Now do billable entries
-    #
-    #
-    # Loop thru all billable runtime entries
-    #
-    for runtimes in jsonout['billable_usage']['runtimes']:
-        tmpBillable = "True"
-        tmpType = "runtime"
-        tmpName = str(runtimes['name'].encode('utf-8','ignore'))
+        if (myrecs['non_billable_usage']['spaces'] is None):
+            continue
         #
-        for plans in runtimes['plans']:
-            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
+        for nobillspaces in myrecs['non_billable_usage']['spaces']:
+            tmpBillable = "False"
+            tmpResourceID = str(nobillspaces['id'].encode('utf-8','ignore'))
+            tmpSpace = str(nobillspaces['name'].encode('utf-8','ignore'))
             #
-            for usagefld in plans['usage']:
-                tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
-                tmpQuantity = str(usagefld['quantity'])
-                tmpCost = str(usagefld['cost'])
+            for containers in nobillspaces['containers']:
+                tmpName = str(containers['name'].encode('utf-8','ignore'))
+                tmpType = "container"
                 #
-                # Dump entry to CSV file
-                #
-                stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+                for usagefld in containers['usage']:
+                    tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                    tmpQuantity = str(usagefld['quantity'])
+                    tmpCost = str(usagefld['cost'])
+                    #
+                    # Dump entry to CSV file
+                    #
+                    stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
     #
-    # Loop thru all non-billable container entries
+    # Loop thru all non-billable spaces services entries
     #
-    for containers in jsonout['billable_usage']['containers']:
-        tmpBillable = "True"
-        tmpType = "containers"
-        tmpName = str(containers['id'].encode('utf-8','ignore'))
+    for myrecs in jsonout['records']:
+        tmpAcctId = str(myrecs['id'].encode('utf-8','ignore'))
+        tmpRegion = str(myrecs['region'].encode('utf-8','ignore'))
         #
-        for plans in containers['plans']:
-            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
-            #
-            for usagefld in plans['usage']:
-                tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
-                tmpQuantity = str(usagefld['quantity'])
-                tmpCost = str(usagefld['cost'])
-                #
-                # Dump entry to CSV file
-                #
-                stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
-    #
-    # Loop thru all non-billable services entries
-    #
-    for svcs in jsonout['billable_usage']['services']:
-        tmpBillable = "True"
-        tmpType = "services"
-        tmpName = str(svcs['name'].encode('utf-8','ignore'))
+        # CLI is returning "blanK" entries for details records, and these
+        # have null values for spaces.  Jump out when this happens.
         #
-        for plans in svcs['plans']:
-            tmpResourceID = str(plans['id'].encode('utf-8','ignore'))
+        if (myrecs['non_billable_usage']['spaces'] is None):
+            continue
+        #
+        for nobillspaces in myrecs['non_billable_usage']['spaces']:
+            tmpBillable = "False"
+            tmpResourceID = str(nobillspaces['id'].encode('utf-8','ignore'))
+            tmpSpace = str(nobillspaces['name'].encode('utf-8','ignore'))
             #
-            for usagefld in plans['usage']:
-                tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
-                tmpQuantity = str(usagefld['quantity'])
-                tmpCost = str(usagefld['cost'])
+            for svcs in nobillspaces['services']:
+                tmpName = str(svcs['name'].encode('utf-8','ignore'))
+                tmpType = "service"
                 #
-                # Dump entry to CSV file
+                for instances in svcs['instances']:
+                    #
+                    for usagefld in instances['usage']:
+                        tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                        tmpQuantity = str(usagefld['quantity'])
+                        tmpCost = str(usagefld['cost'])
+                        #
+                        # Dump entry to CSV file
+                        #
+                        stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Then do billable
+    #
+    #
+    # Loop thru all billable spaces application entries
+    #
+    for myrecs in jsonout['records']:
+        tmpAcctId = str(myrecs['id'].encode('utf-8','ignore'))
+        tmpRegion = str(myrecs['region'].encode('utf-8','ignore'))
+        #
+        # CLI is returning "blanK" entries for details records, and these
+        # have null values for spaces.  Jump out when this happens.
+        #
+        if (myrecs['billable_usage']['spaces'] is None):
+            continue
+        #
+        for billspaces in myrecs['billable_usage']['spaces']:
+            tmpBillable = "True"
+            tmpResourceID = str(billspaces['id'].encode('utf-8','ignore'))
+            tmpSpace = str(billspaces['name'].encode('utf-8','ignore'))
+            #
+            for application in billspaces['applications']:
+                tmpName = str(application['name'].encode('utf-8','ignore'))
+                tmpType = "application"
                 #
-                stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+                for usagefld in application['usage']:
+                    tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                    tmpQuantity = str(usagefld['quantity'])
+                    tmpCost = str(usagefld['cost'])
+                    #
+                    # Dump entry to CSV file
+                    #
+                    stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Loop thru all billable spaces containers entries
+    #
+    for myrecs in jsonout['records']:
+        tmpAcctId = str(myrecs['id'].encode('utf-8','ignore'))
+        tmpRegion = str(myrecs['region'].encode('utf-8','ignore'))
+        #
+        # CLI is returning "blanK" entries for details records, and these
+        # have null values for spaces.  Jump out when this happens.
+        #
+        if (myrecs['billable_usage']['spaces'] is None):
+            continue
+        #
+        for billspaces in myrecs['billable_usage']['spaces']:
+            tmpBillable = "True"
+            tmpResourceID = str(billspaces['id'].encode('utf-8','ignore'))
+            tmpSpace = str(billspaces['name'].encode('utf-8','ignore'))
+            #
+            for containers in billspaces['containers']:
+                tmpName = str(containers['name'].encode('utf-8','ignore'))
+                tmpType = "container"
+                #
+                for usagefld in containers['usage']:
+                    tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                    tmpQuantity = str(usagefld['quantity'])
+                    tmpCost = str(usagefld['cost'])
+                    #
+                    # Dump entry to CSV file
+                    #
+                    stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Loop thru all non-billable spaces services entries
+    #
+    for myrecs in jsonout['records']:
+        tmpAcctId = str(myrecs['id'].encode('utf-8','ignore'))
+        tmpRegion = str(myrecs['region'].encode('utf-8','ignore'))
+        #
+        # CLI is returning "blanK" entries for details records, and these
+        # have null values for spaces.  Jump out when this happens.
+        #
+        if (myrecs['billable_usage']['spaces'] is None):
+            continue
+        #
+        for billspaces in myrecs['billable_usage']['spaces']:
+            tmpBillable = "True"
+            tmpResourceID = str(billspaces['id'].encode('utf-8','ignore'))
+            tmpSpace = str(billspaces['name'].encode('utf-8','ignore'))
+            #
+            for svcs in billspaces['services']:
+                tmpName = str(svcs['name'].encode('utf-8','ignore'))
+                tmpType = "service"
+                #
+                for instances in svcs['instances']:
+                    #
+                    for usagefld in instances['usage']:
+                        tmpUnits = str(usagefld['unitId'].encode('utf-8','ignore'))
+                        tmpQuantity = str(usagefld['quantity'])
+                        tmpCost = str(usagefld['cost'])
+                        #
+                        # Dump entry to CSV file
+                        #
+                        stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
     #
     # Return list of valid space names
     #
@@ -1362,14 +1431,6 @@ def show_billing_detail_json():
         #
         jsonout = json.loads(errout)
         #
-        # Add in a date field
-        #
-        print ("Org is - " + str(eachOption))
-        print ("JSON is -" + str(jsonout))
-        print ("======================")
-        #jsonout['date'] = str(todaystr)
-        #jsonout['org'] = str(eachOption)
-        #
         # Process JSON account details data
         #
         processJsonDetails(jsonout, csvoutfile)
@@ -1412,6 +1473,12 @@ def show_annual_billing_detail_json():
     filename = str(shortAcctName()) + "_annual_billing_by_org.json"
     outfile = openTextFile(filename)
     #
+    # Open CSV file and Write CSV file column headeings
+    #
+    csvfilename = str(shortAcctName()) + "_annual_billing_by_org.csv"
+    csvoutfile = openCsvFile(csvfilename)
+    writeCSVDetailRecord(csvoutfile, 'Account ID','Date','Region','Org','Space','Billable','Type','Resource ID','Name','Units','Quantity','Cost')
+    #
     # Run the command to show all orgs
     #
     cmd = "bx account orgs"
@@ -1420,6 +1487,7 @@ def show_annual_billing_detail_json():
     # Parse the accounts provided, returns a list of orgs
     #
     optionList = parseAccountOrgs(errout)
+    firstLine = True
     #
     # Loop thru entries in org list
     #
@@ -1430,13 +1498,33 @@ def show_annual_billing_detail_json():
         currdate = todaystr
         for months in range(12):
             #
-            # Run for current date
+            # Run the command to show org usage
             #
-            errout = bx_billing_detail(str(eachOption),currdate,True)
+            fixout = bx_billing_detail(str(eachOption),currdate,True)
+            #
+            # Add org name and date
+            #
+            errout = "{ \"org\": \"" + str(eachOption) + "\",\n  \"date\": \"" + str(currdate) + "\",\n  \"records\": " + fixout + "} \n"
             #
             # Just dump output to json file
             #
-            writeTextFile(outfile,errout)
+            if firstLine:
+                writeTextFile(outfile,errout)
+                firstLine = False
+            else:
+                #
+                # Need to split up the JSON elements with commas
+                #
+                fixedout = ",\n" + errout
+                writeTextFile(outfile,fixedout)
+            #
+            # Store json in a data structure - we'll dig into it later
+            #
+            jsonout = json.loads(errout)
+            #
+            # Process JSON account details data
+            #
+            processJsonDetails(jsonout, csvoutfile)
             #
             # Change date to previous month
             #
@@ -1451,7 +1539,8 @@ def show_annual_billing_detail_json():
     # Tell user where to find the file
     #
     print ("")
-    print ("Current annual billing summary in file -> " + str(filename))
+    print ("Current annual billing details in file -> " + str(filename))
+    print ("Current annual billing details in file -> " + str(csvfilename))
     print ("")
     #
     # See if this is a batch session
