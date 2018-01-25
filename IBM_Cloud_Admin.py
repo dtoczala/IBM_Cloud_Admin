@@ -143,8 +143,8 @@ def ExecCommand (cmd):
     #
     try:
         #os.system(cmd)
-        subprocess.call(cmd,shell=True)
         MyLogging("COMMAND -> " + cmd)
+        subprocess.call(cmd,shell=True)
         MyLogging("OUTPUT  -> redirected to user terminal session....")
     except:
         stat = "ERROR (ExecCommand)- on call -> " + str(cmd) + "\n"
@@ -167,13 +167,14 @@ def ExecCmd_Output (cmd):
     #
     try:
         #os.system(cmd)
-        cmdout = subprocess.check_output(cmd,shell=True)
         MyLogging("COMMAND -> " + cmd)
+        cmdout = subprocess.check_output(cmd,shell=True)
         MyLogging("OUTPUT  -> " + cmdout)
     except:
         tmpout = "ERROR (ExecCmd_Output) - on call -> " + str(cmd) + "\n"
         outputLog.write(tmpout)
         errout = str(errout) + " "
+        cmdout = tmpout
     #
     if (errout != ""):
         tmpout = "ERROR (ExecCmd_Output) - on call -> " + str(cmd) + "\n"
@@ -481,6 +482,7 @@ def shortAcctName():
 # IBMCloudLogin - Log into the IBM Cloud
 #
 def IBMCloudLogin(user,pw,token):
+    flag = True
     #
     # See if the Bluemix CLI is installed
     #
@@ -501,11 +503,17 @@ def IBMCloudLogin(user,pw,token):
     #
     errout = ExecCmd_Output(cmd)
     #
-    # Set current env values
+    # Check login success
     #
-    findDefaults()
-    
-    return errout
+    if ("ERROR (ExecCmd_Output)" in errout):
+        flag = False
+    else:
+        #
+        # Set current env values
+        #
+        findDefaults()
+    #
+    return flag
 
 #################################################################
 #
@@ -1888,16 +1896,28 @@ menu_actions = {
 
 # Main Program
 if __name__ == "__main__":
+    #
     # Log into the IBM Cloud
-    IBMCloudLogin(cloudUser,cloudPwd,cloudToken)
-    # Launch main menu
-    if cloudBilling:
+    #
+    stat = IBMCloudLogin(cloudUser,cloudPwd,cloudToken)
+    #
+    # Check login status
+    #
+    if (stat):
         #
-        # Run non-interactive, do billing
+        # Launch main menu
         #
-        show_annual_billing_detail_json()
+        if cloudBilling:
+            #
+            # Run non-interactive, do billing
+            #
+            show_annual_billing_detail_json()
+        else:
+            #
+            # Run an interactive session
+            #
+            main_menu()
     else:
-        #
-        # Run an interactive session
-        #
-        main_menu()
+        print ("ERROR - Invalid login - Error during IBM Cloud login")
+        outputLog.write("ERROR - Invalid login - Error during IBM Cloud login")
+
