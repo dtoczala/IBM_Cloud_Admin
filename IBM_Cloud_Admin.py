@@ -738,7 +738,74 @@ def parseGroupSpaces(myList):
     #
     return retValue
 
-
+#################################################################
+#
+# ProcessAccountUsers -  process the text account user summary info, and
+#                       dump a series of CSV file rows to a data file
+#
+def processAcctUsers(csvoutfile,txtout):
+    #writeCSVDetailRecord(csvoutfile, 'Account ID','User ID','Acct. State','Acct. Role','Organization','Space','Org Manager','Org Billing Manager','Org Auditor','Space Manager','Space Developer','Space Auditor')
+    #
+    # initialize
+    #
+    stat = ""
+    linenum = 1
+    tmpAcctId = ""
+    tmpUserID = ""
+    tmpAcctState = ""
+    tmpAcctRole = ""
+    tmpOrg = ""
+    tmpSpace = ""
+    tmpOrgMgr = ""
+    tmpOrgBillMgr = ""
+    tmpOrgAuditor = ""
+    tmpSpaceMgr = ""
+    tmpSpaceDev = ""
+    tmpSpaceAud = ""
+    #
+    # Take input text - and process it line by line
+    #
+    for lines in txtout.splitlines():
+        #
+        # If first line - then grab the account ID
+        #
+        if (linenum == 1):
+            #
+            # Account ID is characters 29 thru 60
+            #
+            tmpAcctId = lines[28:60]
+        #
+        # If second line or third line then skip it
+        #
+        # If fourth line or more, then we have user information
+        #
+        if (linenum > 3):
+            #
+            # Grab user ID, Accoutn state and Account role, all split by whitespace
+            #
+            (tmpUserID,tmpAcctState,tmpAcctRole) = lines.split()
+            #
+            # Dump entry to CSV file
+            #
+            stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpUserID,tmpAcctState,tmpAcctRole,tmpOrg,tmpSpace,tmpOrgMgr,tmpOrgBillMgr, tmpOrgAuditor,tmpSpaceMgr,tmpSpaceDev,tmpSpaceAud)
+        #
+        # Get next line
+        #
+        linenum = linenum + 1
+    #
+    # Clean up account processing
+    #
+    tmpUserID = ""
+    tmpAcctState = ""
+    tmpAcctRole = ""
+    #
+    # Do the next thing
+    #
+    
+    #
+    # Return status
+    #
+    return stat
 
 #################################################################
 #
@@ -1127,6 +1194,7 @@ def main_menu():
     print ("4. Show Billing Detail by Org for this month")
     print ("5. Show Billing Summary for past 12 months")
     print ("6. Show Billing Detail by Org for past 12 months")
+    print ("7. Show Account Security Settings for Users")
     print ("\n0. Quit")
     choice = raw_input(" >>  ")
     exec_menu(choice)
@@ -1211,6 +1279,21 @@ def bx_billing_summary(datestr,jsonflag):
         cmd = "bx billing account-usage -d " + str(datestr) + " --json"
     else:
         cmd = "bx billing account-usage -d " + str(datestr)
+    #
+    # Execute command
+    #
+    errout = ExecCmd_Output(cmd)
+    #
+    # Just return results
+    #
+    return errout
+
+# Get account users
+def bx_account_users():
+    #
+    # Run the command to show all users
+    #
+    cmd = "bx  account users"
     #
     # Execute command
     #
@@ -1569,6 +1652,74 @@ def show_annual_billing_detail_json():
         return
 
 # Show billing summary - output in json and csv
+def show_account_security():
+    print ("Building current account security report \n")
+    #
+    # Open CSV file and Write CSV file column headeings
+    #
+    csvfilename = str(shortAcctName()) + "_account_security.csv"
+    csvoutfile = openCsvFile(csvfilename)
+    writeCSVDetailRecord(csvoutfile, 'Account ID','User ID','Acct. State','Acct. Role','Organization','Space','Org Manager','Org Billing Manager','Org Auditor','Space Manager','Space Developer','Space Auditor')
+    #
+    # Get overall account settings
+    #
+    errout = bx_account_users()
+    if ("ERROR" not in errout):
+        processAcctUsers(csvoutfile,errout)
+    #
+    # Loop thru past 12 months
+    #
+    #    for months in range(12):
+        #
+        # Run for current date
+        #
+        #errout = bx_billing_summary(currdate,True)
+        #
+        # Just dump output to json file
+        #
+        #writeTextFile(outfile,errout)
+        #
+        # Store json in a data structure - we'll dig into it next
+        #
+        #jsonout = json.loads(errout)
+        #
+        # Add in a date field
+        #
+        #jsonout['date'] = str(currdate)
+        #
+        # Process JSON account summary data
+        #
+        #processJsonSummary(jsonout, csvoutfile)
+        #
+        # Change date to previous month
+        #
+        #currdate = getPrevMonth(currdate)
+    # End loop thru months
+    #
+    # Tell user where to find the file
+    #
+    print ("")
+    print ("Current account security in file -> " + str(csvfilename))
+    print ("")
+    #
+    # See if this is a batch session
+    #
+    if cloudBilling:
+        #
+        # Batch session, just return
+        #
+        return
+    else:
+        #
+        # Interactive session, print menu bottom
+        #
+        print ("9. Back")
+        print ("0. Quit")
+        choice = raw_input(" >>  ")
+        exec_menu(choice)
+        return
+
+# Show billing summary - output in json and csv
 def show_annual_billing_summary_json():
     global todaystr
     print ("Building current ANNUAL billing summary (in JSON) \n")
@@ -1874,6 +2025,7 @@ menu_actions = {
     '4': show_billing_detail_json,
     '5': show_annual_billing_summary_json,
     '6': show_annual_billing_detail_json,
+    '7': show_account_security,
     'A': bx_modify_account,
     'D': bx_modify_defaults,
     'G': bx_modify_group,
