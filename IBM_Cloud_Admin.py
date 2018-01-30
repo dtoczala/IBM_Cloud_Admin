@@ -78,13 +78,15 @@ if ((cur_version_major != req_version_major) or (cur_version_minor != req_versio
 # Parse command line arguments
 #
 cloudBilling = False
+cloudSecurity = False
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-u","--userID",required=False,help="User IBM Cloud ID")
 parser.add_argument("-p","--pwd",required=False,help="User IBM Cloud password")
 parser.add_argument("-t","--token",required=False,help="IBM Cloud Token")
-parser.add_argument("-b","--billing",action="store_true",default=False,dest="boolean_flag",help="Dump billing data")
+parser.add_argument("-b","--billing",action="store_true",default=False,dest="billing_flag",help="Dump billing data")
+parser.add_argument("-s","--security",action="store_true",default=False,dest="security_flag",help="Dump security data")
 #
 # Grab the arguments off the command line
 #
@@ -93,8 +95,10 @@ args = parser.parse_args()
 cloudUser = args.userID
 cloudPwd = args.pwd
 cloudToken = args.token
-if args.boolean_flag:
+if args.billing_flag:
     cloudBilling = True
+if args.security_flag:
+    cloudSecurity = True
 #
 # Calculate the current date
 #
@@ -793,14 +797,272 @@ def processAcctUsers(csvoutfile,txtout):
         #
         linenum = linenum + 1
     #
-    # Clean up account processing
+    # Return status
     #
+    return stat
+
+#################################################################
+#
+# ProcessAccountOrgs -  process the text org user summary info, and
+#                       dump a series of CSV file rows to a data file
+#
+def processAcctOrgs(csvoutfile,org):
+    #writeCSVDetailRecord(csvoutfile, 'Account ID','User ID','Acct. State','Acct. Role','Organization','Space','Org Manager','Org Billing Manager','Org Auditor','Space Manager','Space Developer','Space Auditor')
+    global envAccount
+    #
+    # initialize
+    #
+    stat = ""
+    linenum = 1
+    tmpAcctId = envAccount
     tmpUserID = ""
     tmpAcctState = ""
     tmpAcctRole = ""
+    tmpOrg = org
+    tmpSpace = ""
+    tmpOrgMgr = ""
+    tmpOrgBillMgr = ""
+    tmpOrgAuditor = ""
+    tmpSpaceMgr = ""
+    tmpSpaceDev = ""
+    tmpSpaceAud = ""
     #
-    # Do the next thing
+    # Set up user array and roles array
     #
+    tmpOrgMgrDict = {}
+    tmpOrgBillMgrDict = {}
+    tmpOrgAuditorDict = {}
+    #
+    #
+    #
+    orgMgrFlag = False
+    orgBillMgrFlag = False
+    orgAuditorFlag = False
+    #
+    # Run the command to show all orgs
+    #
+    cmd = "bx account org-users " + str(org)
+    txtout = ExecCmd_Output(cmd)
+    #
+    # Parse the returned data
+    #
+    # Take input text - and process it line by line
+    #
+    for lines in txtout.splitlines():
+        #
+        # Strip all whitespace at end of line
+        #
+        thisLine = lines.rstrip()
+        #
+        # If line has "MANAGERS" title, flip flag for Org Managers
+        #
+        if (thisLine.startswith("MANAGERS")):
+            #
+            # Flip flag for Org Managers
+            #
+            orgMgrFlag = True
+        #
+        # If line has "MANAGERS" title, flip flag for Org Billing Managers
+        #
+        if (thisLine.startswith("BILLING MANAGERS")):
+            #
+            # Flip flag for Org Managers, and Billing Managers
+            #
+            orgMgrFlag = False
+            orgBillMgrFlag = True
+        #
+        # If line has "AUDITORS" title, flip flag for Org Auditor
+        #
+        if (thisLine.startswith("AUDITOR")):
+            #
+            # Flip flag for Org Managers, and Billing Managers
+            #
+            orgBillMgrFlag = False
+            orgAuditorFlag = True
+        #
+        # If not a title line, and not a blank line, then we have a user ID
+        #
+        if ((not (thisLine.startswith("MANAGERS"))) and (not (thisLine.startswith("BILLING MANAGERS"))) and (not (thisLine.startswith("AUDITOR"))) and (not (thisLine == ""))):
+            #
+            # We have a user ID, store it in the hash
+            #
+            tmpUserID = thisLine
+            #
+            # If we're on managers, save TRUE for Org Manager role, and save empty slots
+            #
+            if (orgMgrFlag):
+                tmpOrgMgrDict[tmpUserID] = True
+                if (not (tmpUserID in tmpOrgBillMgrDict)):
+                    tmpOrgBillMgrDict[tmpUserID] = False
+                if (not (tmpUserID in tmpOrgAuditorDict)):
+                    tmpOrgAuditorDict[tmpUserID] = False
+            #
+            # If we're on billing managers, save TRUE for Org Billing Manager role, and save empty slots
+            #
+            if (orgBillMgrFlag):
+                tmpOrgBillMgrDict[tmpUserID] = True
+                if (not (tmpUserID in tmpOrgMgrDict)):
+                    tmpOrgMgrDict[tmpUserID] = False
+                if (not (tmpUserID in tmpOrgAuditorDict)):
+                    tmpOrgAuditorDict[tmpUserID] = False
+            #
+            # If we're on auditors, save TRUE for Org Auditor role, and save empty slots
+            #
+            if (orgAuditorFlag):
+                tmpOrgAuditorDict[tmpUserID] = True
+                if (not (tmpUserID in tmpOrgMgrDict)):
+                    tmpOrgMgrDict[tmpUserID] = False
+                if (not (tmpUserID in tmpOrgBillMgrDict)):
+                    tmpOrgBillMgrDict[tmpUserID] = False
+
+    #
+    # Cycle through dictionaries and dump data to CSV
+    #
+    for tmpUserID in tmpOrgMgrDict:
+        #
+        # Assign values
+        #
+        tmpOrgMgr = str(tmpOrgMgrDict[tmpUserID])
+        tmpOrgBillMgr = str(tmpOrgBillMgrDict[tmpUserID])
+        tmpOrgAuditor = str(tmpOrgAuditorDict[tmpUserID])
+        #
+        # Dump entry to CSV file
+        #
+        stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpUserID,tmpAcctState,tmpAcctRole,tmpOrg,tmpSpace,tmpOrgMgr,tmpOrgBillMgr, tmpOrgAuditor,tmpSpaceMgr,tmpSpaceDev,tmpSpaceAud)
+
+    #
+    # Return status
+    #
+    return stat
+
+#################################################################
+#
+# ProcessAccountSpaces -  process the text space user summary info, and
+#                         dump a series of CSV file rows to a data file
+#
+def processAcctSpaces(csvoutfile,org,space):
+    #writeCSVDetailRecord(csvoutfile, 'Account ID','User ID','Acct. State','Acct. Role','Organization','Space','Org Manager','Org Billing Manager','Org Auditor','Space Manager','Space Developer','Space Auditor')
+    global envAccount
+    #
+    # initialize
+    #
+    stat = ""
+    linenum = 1
+    tmpAcctId = envAccount
+    tmpUserID = ""
+    tmpAcctState = ""
+    tmpAcctRole = ""
+    tmpOrg = org
+    tmpSpace = space
+    tmpOrgMgr = ""
+    tmpOrgBillMgr = ""
+    tmpOrgAuditor = ""
+    tmpSpaceMgr = ""
+    tmpSpaceDev = ""
+    tmpSpaceAud = ""
+    #
+    # Set up user array and roles array
+    #
+    tmpSpaceMgrDict = {}
+    tmpSpaceDevDict = {}
+    tmpSpaceAuditorDict = {}
+    #
+    #
+    #
+    spaceMgrFlag = False
+    spaceDevFlag = False
+    spaceAuditorFlag = False
+    #
+    # Run the command to show all orgs
+    #
+    cmd = "bx account space-users " + str(org) + " " + str(space)
+    txtout = ExecCmd_Output(cmd)
+    #
+    # Parse the returned data
+    #
+    # Take input text - and process it line by line
+    #
+    for lines in txtout.splitlines():
+        #
+        # Strip all whitespace at end of line
+        #
+        thisLine = lines.rstrip()
+        #
+        # If line has "SPACE MANAGERS" title, flip flag for Org Managers
+        #
+        if (thisLine.startswith("SPACE MANAGERS")):
+            #
+            # Flip flag for Org Managers
+            #
+            spaceMgrFlag = True
+        #
+        # If line has "SPACE DEVELOPER" title, flip flag for Space Developers
+        #
+        if (thisLine.startswith("SPACE DEVELOPER")):
+            #
+            # Flip flag for Org Managers, and Billing Managers
+            #
+            spaceMgrFlag = False
+            spaceDevFlag = True
+        #
+        # If line has "SPACE AUDITORS" title, flip flag for Org Auditor
+        #
+        if (thisLine.startswith("SPACE AUDITORS")):
+            #
+            # Flip flag for Org Managers, and Billing Managers
+            #
+            spaceDevFlag = False
+            spaceAuditorFlag = True
+        #
+        # If not a title line, and not a blank line, then we have a user ID
+        #
+        if ((not (thisLine.startswith("SPACE MANAGERS"))) and (not (thisLine.startswith("SPACE DEVELOPER"))) and (not (thisLine.startswith("SPACE AUDITORS"))) and (not (thisLine == ""))):
+            #
+            # We have a user ID, store it in the hash
+            #
+            tmpUserID = thisLine
+            #
+            # If we're on managers, save TRUE for Org Manager role, and save empty slots
+            #
+            if (spaceMgrFlag):
+                tmpSpaceMgrDict[tmpUserID] = True
+                if (not (tmpUserID in tmpSpaceDevDict)):
+                    tmpSpaceDevDict[tmpUserID] = False
+                if (not (tmpUserID in tmpSpaceAuditorDict)):
+                    tmpSpaceAuditorDict[tmpUserID] = False
+            #
+            # If we're on billing managers, save TRUE for Org Billing Manager role, and save empty slots
+            #
+            if (spaceDevFlag):
+                tmpSpaceDevDict[tmpUserID] = True
+                if (not (tmpUserID in tmpSpaceMgrDict)):
+                    tmpSpaceMgrDict[tmpUserID] = False
+                if (not (tmpUserID in tmpSpaceAuditorDict)):
+                    tmpSpaceAuditorDict[tmpUserID] = False
+            #
+            # If we're on auditors, save TRUE for Org Auditor role, and save empty slots
+            #
+            if (spaceAuditorFlag):
+                tmpSpaceAuditorDict[tmpUserID] = True
+                if (not (tmpUserID in tmpSpaceMgrDict)):
+                    tmpSpaceMgrDict[tmpUserID] = False
+                if (not (tmpUserID in tmpSpaceDevDict)):
+                    tmpSpaceDevDict[tmpUserID] = False
+
+    #
+    # Cycle through dictionaries and dump data to CSV
+    #
+    for tmpUserID in tmpSpaceMgrDict:
+        #
+        # Assign values
+        #
+        tmpSpaceMgr = str(tmpSpaceMgrDict[tmpUserID])
+        tmpSpaceDev = str(tmpSpaceDevDict[tmpUserID])
+        tmpSpaceAud = str(tmpSpaceAuditorDict[tmpUserID])
+        #
+        # Dump entry to CSV file
+        #
+        stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpUserID,tmpAcctState,tmpAcctRole,tmpOrg,tmpSpace,tmpOrgMgr,tmpOrgBillMgr, tmpOrgAuditor,tmpSpaceMgr,tmpSpaceDev,tmpSpaceAud)
     
     #
     # Return status
@@ -1667,34 +1929,41 @@ def show_account_security():
     if ("ERROR" not in errout):
         processAcctUsers(csvoutfile,errout)
     #
-    # Loop thru past 12 months
+    # Run the command to show all orgs
     #
-    #    for months in range(12):
+    cmd = "bx account orgs"
+    errout = ExecCmd_Output(cmd)
+    #
+    # Parse the accounts provided, returns a list of orgs
+    #
+    orgList = parseAccountOrgs(errout)
+    #
+    # Loop thru entries in org list
+    #
+    for eachOrg in orgList:
         #
-        # Run for current date
+        # Process the users and roles for this org
         #
-        #errout = bx_billing_summary(currdate,True)
+        stat = processAcctOrgs(csvoutfile,eachOrg)
         #
-        # Just dump output to json file
+        # Loop through each space in the org, get a list of them
         #
-        #writeTextFile(outfile,errout)
+        cmd = "bx account spaces -o " + str(eachOrg)
+        errout = ExecCmd_Output(cmd)
         #
-        # Store json in a data structure - we'll dig into it next
+        # Parse the accounts provided, returns a list of spaces
         #
-        #jsonout = json.loads(errout)
+        spaceList = parseAccountSpaces(errout)
         #
-        # Add in a date field
+        # Loop through each space in the list
         #
-        #jsonout['date'] = str(currdate)
-        #
-        # Process JSON account summary data
-        #
-        #processJsonSummary(jsonout, csvoutfile)
-        #
-        # Change date to previous month
-        #
-        #currdate = getPrevMonth(currdate)
-    # End loop thru months
+        for eachSpace in spaceList:
+            #
+            # Process the users and roles for this space
+            #
+            stat = processAcctSpaces(csvoutfile,eachOrg,eachSpace)
+    #
+    # End loop thru spaces , and end loop through orgs
     #
     # Tell user where to find the file
     #
@@ -1704,7 +1973,7 @@ def show_account_security():
     #
     # See if this is a batch session
     #
-    if cloudBilling:
+    if cloudSecurity:
         #
         # Batch session, just return
         #
@@ -2064,7 +2333,12 @@ if __name__ == "__main__":
             # Run non-interactive, do billing
             #
             show_annual_billing_detail_json()
-        else:
+        if cloudSecurity:
+            #
+            # Run non-interactive, do security
+            #
+            show_account_security()
+        if (not (cloudBilling or cloudSecurity)):
             #
             # Run an interactive session
             #
