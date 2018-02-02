@@ -177,8 +177,7 @@ def ExecCmd_Output (cmd):
     except:
         tmpout = "ERROR (ExecCmd_Output) - on call -> " + str(cmd) + "\n"
         outputLog.write(tmpout)
-        errout = str(errout) + " "
-        cmdout = tmpout
+        errout = str(tmpout) + " "
     #
     if (errout != ""):
         tmpout = "ERROR (ExecCmd_Output) - on call -> " + str(cmd) + "\n"
@@ -372,6 +371,43 @@ def closeCsvFile(csvFile):
 
 #################################################################
 #
+# Get user list from a csv file
+#
+def getUserCsvFile():
+    #
+    # Get the input filename and filehandle
+    #
+    userList = []
+    print ("Enter name of file with accounts to be added")
+    choice = raw_input(" >>  ")
+    #
+    # See if the file exists
+    #
+
+    try:
+        with open(choice) as csvfile:
+            for row in csvfile:
+                tempList = []
+                tempList = string.split(row,",")
+                #
+                # if you have entries, add them to your user ID list
+                #
+                if (tempList != []):
+                    userList.extend(tempList)
+    except:
+        MyLogging("ERROR = Unable to open input user ID file " + str(choice))
+    #
+    # Get rid of any quote characters, and any newlines
+    #
+    userList = [i.replace('"','') for i in userList]
+    userList = [i.replace('\n','') for i in userList]
+    #
+    # normal return
+    #
+    return userList
+
+#################################################################
+#
 # Get date in YYYY-MM format, and return the previous month in
 # the same YYYY-MM format
 #
@@ -509,7 +545,7 @@ def IBMCloudLogin(user,pw,token):
     #
     # Check login success
     #
-    if ("ERROR (ExecCmd_Output)" in errout):
+    if (("ERROR (ExecCmd_Output)" in errout) or (errout == "")):
         flag = False
     else:
         #
@@ -1440,6 +1476,327 @@ def processJsonDetails(jsonout, csvoutfile):
     return stat
 
 
+#
+# Check choice and make changes based on choice
+#
+#if ((choice == "w") or (choice =="W") ):
+#    bx_add_users_to_acct(userList)
+#if ((choice == "x") or (choice =="X") ):
+#    bx_add_users_to_acctorg(userList,acctRole)
+#if ((choice == "y") or (choice =="Y") ):
+#    bx_add_users_to_acct_space(userList,acctRole)
+#if ((choice == "z") or (choice =="Z") ):
+#    bx_add_users_to_all_spaces(userList,acctRole)
+
+#################################################################
+#
+# bx_add_users_to_acct -  add each of the input users in list to account with
+#                           the general role specified
+#
+def bx_add_users_to_acct(userList):
+    #
+    # initialize
+    #
+    stat = ""
+    #
+    # Loop thru user list
+    #
+    for userId in userList:
+        #
+        # Build command to et access for this user
+        #
+        cmd = "bx account user-invite " + str(userId)
+        errout = ExecCmd_Output(cmd)
+        #
+        # See if we had an error
+        #
+        if ((errout == "") or ("FAILED" in errout)):
+            #
+            # Notify the user of the error condition
+            #
+            print ("User " + str(userId) + " was not added to account.  Error when adding to account.")
+            MyLogging ("User " + str(userId) + " was not added to account.  Error when adding to account.")
+    #
+    # Return status
+    #
+    return stat
+
+#################################################################
+#
+# bx_add_users_to_acct_space -  add each of the input users in list to a specific
+#                               org and space with the general role specified
+#
+def bx_add_users_to_acct_space(userList,acctRole):
+    #
+    # initialize
+    #
+    stat = ""
+    #
+    # Set roles for these users - (either "Admin", "Dev", or "Audit")
+    #
+    # If "Admin" selected, give full access
+    #
+    if (acctRole == "Admin"):
+        orgRole = "OrgManager"
+        spaceRole = "SpaceManager"
+    #
+    # if "Dev" selected, give developer access (which is BillingManager for org, SpaceDeveloper for Space)
+    #
+    if (acctRole == "Dev"):
+        orgRole = "BillingManager"
+        spaceRole = "SpaceDeveloper"
+    #
+    # if "Audit" selected, give auditor access
+    #
+    if (acctRole == "Audit"):
+        orgRole = "OrgAuditor"
+        spaceRole = "SpaceAuditor"
+    #
+    # Identify the proper org
+    #
+    #
+    # Run the command to show current orgs
+    #
+    cmd = "bx account orgs"
+    errout = ExecCmd_Output(cmd)
+    if (errout != ""):
+        #
+        # Log the error - unable to hit API endpoint
+        #
+        MyLogging("ERROR - Unable to run bluemix account orgs command")
+    #
+    # Parse the accounts provided, returns a list of tuples in (id option) format
+    #
+    optionList = parseAccountOrgs(errout)
+    #
+    # Give user options, find out what they want
+    #
+    newOrg = getUserOptions(optionList,"Select org to assign users to...")
+    #
+    # Set to the new org
+    #
+    cmd = "bx target -o " + str(newOrg)
+    errout = ExecCmd_Output(cmd)
+    #
+    # Run the command to show current spaces
+    #
+    cmd = "bx account spaces"
+    errout = ExecCmd_Output(cmd)
+    if (errout == ""):
+        #
+        # Log the error - unable to hit API endpoint
+        #
+        MyLogging("ERROR - Unable to run bluemix account spaces command")
+    #
+    # Parse the spaces provided, returns a list of spaces
+    #
+    optionList = parseAccountSpaces(errout)
+    #
+    # Give user options, find out what they want
+    #
+    if (optionList == []):
+        print ("No valid spaces available")
+        MyLogging("ERROR - No valid spaces available")
+    else:
+        newSpace = getUserOptions(optionList,"Select space to assign users to...")
+    #
+    # Loop thru user list
+    #
+    for userId in userList:
+        #
+        # Build command to set org access for this user
+        #
+        cmd = "bx account org-user-add " + str(userId) + " " + str(newOrg)
+        errout = ExecCmd_Output(cmd)
+        #
+        # Build command to set org role for this user
+        #
+        cmd = "bx account org-role-set " + str(userId) + " " + str(newOrg) + " " + str(orgRole)
+        errout = ExecCmd_Output(cmd)
+        #
+        # Build command to set space role for this user
+        #
+        cmd = "bx account space-role-set " + str(userId) + " " + str(newOrg) + " " + str(newSpace) + " " + str(spaceRole)
+        errout = ExecCmd_Output(cmd)
+
+    #
+    # Return status
+    #
+    return stat
+
+#################################################################
+#
+# bx_add_users_to_acctorg -  add each of the input users in list to a specific
+#                            org with the general role specified
+#
+def bx_add_users_to_acctorg(userList,acctRole):
+    #
+    # initialize
+    #
+    stat = ""
+    #
+    # Set roles for these users - (either "Admin", "Dev", or "Audit")
+    #
+    # If "Admin" selected, give full access
+    #
+    if (acctRole == "Admin"):
+        orgRole = "OrgManager"
+    #
+    # if "Dev" selected, give developer access (which is BillingManager for org, SpaceDeveloper for Space)
+    #
+    if (acctRole == "Dev"):
+        orgRole = "BillingManager"
+    #
+    # if "Audit" selected, give auditor access
+    #
+    if (acctRole == "Audit"):
+        orgRole = "OrgAuditor"
+    #
+    # Identify the proper org
+    #
+    #
+    # Run the command to show current orgs
+    #
+    cmd = "bx account orgs"
+    errout = ExecCmd_Output(cmd)
+    if (errout == ""):
+        #
+        # Log the error - unable to hit API endpoint
+        #
+        MyLogging("ERROR - Unable to run bluemix account orgs command")
+    #
+    # Parse the accounts provided, returns a list of tuples in (id option) format
+    #
+    optionList = parseAccountOrgs(errout)
+    #
+    # Give user options, find out what they want
+    #
+    newOrg = getUserOptions(optionList,"Select org to assign users to...")
+    #
+    # Set to the new org
+    #
+    cmd = "bx target -o " + str(newOrg)
+    errout = ExecCmd_Output(cmd)
+    #
+    # Loop thru user list
+    #
+    for userId in userList:
+        #
+        # Build command to set org access for this user
+        #
+        cmd = "bx account org-user-add " + str(userId) + " " + str(newOrg)
+        errout = ExecCmd_Output(cmd)
+        #
+        # Build command to set org role for this user
+        #
+        cmd = "bx account org-role-set " + str(userId) + " " + str(newOrg) + " " + str(orgRole)
+        errout = ExecCmd_Output(cmd)
+    #
+    # Return status
+    #
+    return stat
+
+#################################################################
+#
+# bx_add_users_to_all_spaces -  add each of the input users in list to a specific
+#                               org and ALL spaces under that org, with the general
+#                               role specified
+#
+def bx_add_users_to_all_spaces(userList,acctRole):
+    #
+    # initialize
+    #
+    stat = ""
+    #
+    # Set roles for these users - (either "Admin", "Dev", or "Audit")
+    #
+    # If "Admin" selected, give full access
+    #
+    if (acctRole == "Admin"):
+        orgRole = "OrgManager"
+        spaceRole = "SpaceManager"
+    #
+    # if "Dev" selected, give developer access (which is BillingManager for org, SpaceDeveloper for Space)
+    #
+    if (acctRole == "Dev"):
+        orgRole = "BillingManager"
+        spaceRole = "SpaceDeveloper"
+    #
+    # if "Audit" selected, give auditor access
+    #
+    if (acctRole == "Audit"):
+        orgRole = "OrgAuditor"
+        spaceRole = "SpaceAuditor"
+    #
+    # Identify the proper org
+    #
+    #
+    # Run the command to show current orgs
+    #
+    cmd = "bx account orgs"
+    errout = ExecCmd_Output(cmd)
+    if (errout == ""):
+        #
+        # Log the error - unable to hit API endpoint
+        #
+        MyLogging("ERROR - Unable to run bluemix account orgs command")
+    #
+    # Parse the accounts provided, returns a list of tuples in (id option) format
+    #
+    optionList = parseAccountOrgs(errout)
+    #
+    # Give user options, find out what they want
+    #
+    newOrg = getUserOptions(optionList,"Select org to assign users to...")
+    #
+    # Set to the new org
+    #
+    cmd = "bx target -o " + str(newOrg)
+    errout = ExecCmd_Output(cmd)
+    #
+    # Run the command to show current spaces
+    #
+    cmd = "bx account spaces"
+    errout = ExecCmd_Output(cmd)
+    if (errout == ""):
+        #
+        # Log the error - unable to hit API endpoint
+        #
+        MyLogging("ERROR - Unable to run bluemix account spaces command")
+    #
+    # Parse the spaces provided, returns a list of spaces
+    #
+    optionList = parseAccountSpaces(errout)
+    #
+    # Loop thru user list
+    #
+    for userId in userList:
+        #
+        # Build command to set org access for this user
+        #
+        cmd = "bx account org-user-add " + str(userId) + " " + str(newOrg)
+        errout = ExecCmd_Output(cmd)
+        #
+        # Build command to set org role for this user
+        #
+        cmd = "bx account org-role-set " + str(userId) + " " + str(newOrg) + " " + str(orgRole)
+        errout = ExecCmd_Output(cmd)
+        #
+        # Loop thru every space under this org
+        #
+        for thisSpace in optionList:
+            #
+            # Build command to set space role for this user
+            #
+            cmd = "bx account space-role-set " + str(userId) + " " + str(newOrg) + " " + str(thisSpace) + " " + str(spaceRole)
+            errout = ExecCmd_Output(cmd)
+    
+    #
+    # Return status
+    #
+    return stat
+
+
 # =======================
 #     MENUS FUNCTIONS
 # =======================
@@ -1457,6 +1814,7 @@ def main_menu():
     print ("5. Show Billing Summary for past 12 months")
     print ("6. Show Billing Detail by Org for past 12 months")
     print ("7. Show Account Security Settings for Users")
+    print ("8. Add users to Account")
     print ("\n0. Quit")
     choice = raw_input(" >>  ")
     exec_menu(choice)
@@ -2060,9 +2418,50 @@ def show_annual_billing_summary_json():
         exec_menu(choice)
         return
 
+def bx_modify_group():
+    print ("Current IBM Cloud Resource Groups \n")
+    #
+    # Run the command to show current accounts
+    #
+    cmd = "bx resource groups"
+    errout = ExecCmd_Output(cmd)
+    if (errout == ""):
+        #
+        # Log the error - unable to hit API endpoint
+        #
+        outputLog.write("ERROR - Unable to run bluemix account spaces command")
+    #
+    # Parse the spaces provided, returns a list of spaces
+    #
+    optionList = parseGroupSpaces(errout)
+    #
+    # Give user options, find out what they want
+    #
+    if (optionList == []):
+        print ("No valid resource groups available")
+        outputLog.write("ERROR - No valid resource groups available")
+    else:
+        newGroup = getUserOptions(optionList,"Select a resource group to associate with...")
+        #
+        # Update account
+        #
+        cmd = "bx target -g " + str(newGroup)
+        errout = ExecCmd_Output(cmd)
+    #
+    # Set current env values
+    #
+    findDefaults()
+    #
+    # Print menu
+    #
+    choice = ""
+    exec_menu(choice)
+    return
+
 #
-# Modify default settings
-def bx_modify_defaults():
+# Modify account users
+#
+def add_users_to_account():
     print ("Current IBM Cloud Default Settings \n")
     #
     # Show current context
@@ -2076,18 +2475,79 @@ def bx_modify_defaults():
     print ("Org:               " + str(envOrg))
     print ("Space:             " + str(envSpace))
     #
+    # Get input CSV file of users
+    #
+    userList = getUserCsvFile()
+    if (userList == []):
+        #
+        # Give an error message
+        #
+        print ("")
+        print ("ERROR - Unable to process CSV file")
+        print ("")
+        choice = raw_input("Hit return to continue....")
+        MyLogging("ERROR - Unable to process CSV file - Empty user list\n")
+        return
+    MyLogging("USER LIST is -" + str(userList) + "-\n")
+    #
+    # Ask for the right context to add users
+    #
+    noGoodInput = True
+    acctRole = ""
+    while (noGoodInput):
+        os.system('clear')
+        print ("Modifying user access and permissions on the IBM Cloud\n")
+        print ("Please choose the action that you want to execute:")
+        print ("W. Add users to the account")
+        print ("X. Add users to the account and a specific Org")
+        print ("Y. Add users to the account and a specific space under a specific Org")
+        print ("Z. Add users to the account under ALL spaces under a specific Org")
+        print ("\n9. Back to Main Menu")
+        choice = raw_input(" >>  ")
+        if (choice == "9"):
+            menu_actions['main_menu']()
+        if (choice in ("x","X","y","Y","z","Z")):
+            #
+            # Ask for the right context to add users
+            #
+            print ("\nWhat type of role would you like assigned?\n")
+            print ("Please choose the general role that you want to assign:")
+            print ("J. Add users in Superuser or Admin role")
+            print ("K. Add users in Developer or Contributor role")
+            print ("L. Add users in an audit or monitor role")
+            perms = raw_input(" >>  ")
+            #
+            if (perms in ("j","J")):
+                noGoodInput = False
+                acctRole = "Admin"
+            if (perms in ("k","K")):
+                noGoodInput = False
+                acctRole = "Dev"
+            if (perms in ("l","L")):
+                noGoodInput = False
+                acctRole = "Audit"
+            # end if
+        if (choice in ("w","W")):
+            noGoodInput = False
+        # end while - get inputs again
+    #
+    # Check choice and make changes based on choice
+    #
+    if ((choice == "w") or (choice =="W") ):
+        bx_add_users_to_acct(userList)
+    if ((choice == "x") or (choice =="X") ):
+        bx_add_users_to_acct(userList)
+        bx_add_users_to_acctorg(userList,acctRole)
+    if ((choice == "y") or (choice =="Y") ):
+        bx_add_users_to_acct(userList)
+        bx_add_users_to_acct_space(userList,acctRole)
+    if ((choice == "z") or (choice =="Z") ):
+        bx_add_users_to_acct(userList)
+        bx_add_users_to_all_spaces(userList,acctRole)
+    #
     # Print menu bottom
     #
-    print (" ")
-    print ("A. Modify Default Account")
-    print ("R. Modify Default Region")
-    print ("O. Modify Default Org")
-    print ("S. Modify Default Space")
-    print ("G. Modify Resource Group")
-    print ("9. Back")
-    print ("0. Quit")
-    choice = raw_input(" >>  ")
-    exec_menu(choice)
+    menu_actions['main_menu']()
     return
 
 def bx_modify_account():
@@ -2141,7 +2601,7 @@ def bx_modify_org():
     #
     cmd = "bx account orgs"
     errout = ExecCmd_Output(cmd)
-    if (errout != ""):
+    if (errout == ""):
         #
         # Log the error - unable to hit API endpoint
         #
@@ -2272,6 +2732,33 @@ def bx_modify_group():
     exec_menu(choice)
     return
 
+def bx_modify_defaults():
+    print ("Current IBM Cloud Default Settings \n")
+    #
+    # Show current context
+    #
+    print ("User:              " + str(envUser))
+    print ("Account:           " + str(envAccount))
+    print ("API Endpoint:      " + str(envAPIEndpoint))
+    print (" ")
+    print ("Region:            " + str(envRegion))
+    print ("Resource Group:    " + str(envResourceGroup))
+    print ("Org:               " + str(envOrg))
+    print ("Space:             " + str(envSpace))
+    #
+    # Print menu bottom
+    #
+    print (" ")
+    print ("A. Modify Default Account")
+    print ("R. Modify Default Region")
+    print ("O. Modify Default Org")
+    print ("S. Modify Default Space")
+    print ("G. Modify Resource Group")
+    print ("9. Back")
+    print ("0. Quit")
+    choice = raw_input(" >>  ")
+    exec_menu(choice)
+    return
 
 # Back to main menu
 def back():
@@ -2295,6 +2782,7 @@ menu_actions = {
     '5': show_annual_billing_summary_json,
     '6': show_annual_billing_detail_json,
     '7': show_account_security,
+    '8': add_users_to_account,
     'A': bx_modify_account,
     'D': bx_modify_defaults,
     'G': bx_modify_group,
