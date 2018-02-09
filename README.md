@@ -1,4 +1,6 @@
 # IBM_Cloud_Admin
+**Author: D. Toczala**
+
 A simple Python script to do some basic IBM Cloud administrative tasks.
 
 This current script supports version 0.6.5. of the IBM Cloud CLI tool.
