@@ -1,5 +1,7 @@
 # IBM_Cloud_Admin
-A simple Python script to do some basic IBM Cloud administrative tasks
+A simple Python script to do some basic IBM Cloud administrative tasks.
+
+This current script supports version 0.6.5. of the IBM Cloud CLI tool.
 
 ## How to Use the Script
 
@@ -14,6 +16,8 @@ The script has a few different modes it can run in.
 * If you use the -b flag (for billing information), then you will run in batch mode.  This will get billing information for the account being logged into, and then quit.  You can use this mode in a script, since it does not require any user input.
 * If you use the -s flag (for security information), then you will run in batch mode.  This will get security information for the account being logged into, and then quit.  You can use this mode in a script, since it does not require any user input.
 * If you don’t use the -b flag or the -s flag, then you will run in interactive mode.  This will display menus on the command line that you can choose from.
+
+When running in an interactive mode, you can use the tool to process CSV files with lists of users, and add these users to particular accounts, organizations and spaces.  This user administrative capability is still being developed and refined.
 
 There are a number of output files from this tool.  There is the IBM_Cloud_Admin.output.log file, which contains a log of your session and will show you the IBM Cloud command line commands issued by the tool, and the responses that were returned.  This is a good way to get familiar with the IBM Cloud command line commands, so you can include into custom scripts for your own use. 
 
