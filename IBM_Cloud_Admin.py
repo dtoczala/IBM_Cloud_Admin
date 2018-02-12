@@ -1231,7 +1231,8 @@ def processJsonDetails(jsonout, csvoutfile):
     #
     for myrecs in jsonout['records']:
         tmpAcctId = str(myrecs['account_id'].encode('utf-8','ignore'))
-        tmpRegion = str(myrecs['organization_id'].encode('utf-8','ignore'))
+        thisRegion = str(myrecs['organization_id'].encode('utf-8','ignore'))
+        (tmpRegion, junk) = thisRegion.split(":")
         #
         # CLI is returning "blanK" entries for details records, and these
         # have null values for spaces.  Jump out when this happens.
