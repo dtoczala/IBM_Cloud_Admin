@@ -569,8 +569,9 @@ def IBMCloudLogin(user,pw,token):
     (version,major,minor) = parseBxVersion(errout)
     #
     # Error message and flag if not supported version
+    # We are supporting version 0.6.6
     #
-    if ((version != 0) or (major != 6) or (minor != 5)):
+    if ((version != 0) or (major != 6) or (minor != 6)):
         print ("ERROR - " + str(badVersion))
         MyLogging("ERROR - " + str(badVersion) + "\n Current version is - " + str(version) + "." + str(major) + "." + str(minor))
         flag = False
