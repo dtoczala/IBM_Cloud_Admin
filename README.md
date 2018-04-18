@@ -3,7 +3,7 @@
 
 A simple Python script to do some basic IBM Cloud administrative tasks.
 
-This current script supports version 0.6.5. of the IBM Cloud CLI tool.
+This current script supports version 0.6.6. of the IBM Cloud CLI tool.  If you have 0.6.5. it will work with that as well, but you will need to disable the CLI version check in the code.
 
 ## How to Use the Script
 
