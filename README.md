@@ -5,6 +5,29 @@ A simple Python script to do some basic IBM Cloud administrative tasks.
 
 This current script supports version 0.6.6. of the IBM Cloud CLI tool.  If you have 0.6.5. it will work with that as well, but you will need to disable the CLI version check in the code.
 
+## Installation Guide
+
+This is a guide to getting this tool properly installed on your system.  I have a Macbook (iOS) system, so I have tested this out on iOS systems, but not on Wondows or Linux platforms.  The concepts and steps should be the same, but the paths and some syntax may change on those platforms.
+
+### Install Anaconda
+
+Most of the early users of this tool became frustrated when attemping to use it because it has some unique dependencies.  I use an [Anaconda](https://anaconda.org/) python development environment to manage these dependencies.  To get started, you will need to install [Anaconda](https://anaconda.org/).
+
+You can find the main [Anaconda](https://anaconda.org/) page and navigate from there - but it confuses me me lately.  So instead I'll point you at the [Anaconda downloads page](https://www.anaconda.com/download).  Go to the [Anaconda downloads page](https://www.anaconda.com/download) and select the Anaconda download package for your particular platform.  Once you have downloaded it, install it onto your system.
+
+While you are at it, you should probably go and grab a copy of the [Anaconda Cheat Sheet](https://conda.io/docs/_downloads/conda-cheatsheet.pdf).  This will help you understand your Anaconda environments, and help you in using the tool.
+
+### Create IBM Cloud Admin Python Environment
+
+Once [Anaconda](https://anaconda.org/) is installed on your system, you will want to set up a proper Python environment for the IBM Cloud Admin tool to use.  Download the [IBM_Cloud_admin.env](https://github.com/dtoczala/IBM_Cloud_Admin/blob/master/IBM_Cloud_Admin.env) file from this project area to your local machine.  Once this is done, you will open up a command line window (a "Terminal" on iOS, a command prompt on Windows) and enter the following command:
+
+> conda create -n IBM_Cloud_Admin --file IBM_Cloud_Admin.env
+
+This creates a new environment, which you will need to switch to before trying to run the IBM_CLoud_Admin tool.  This environment has all of the proper Python packages downloaded and installed.  To run the IBM_Cloud_Admin tool, make sure that you first do the following:
+
+> source activate IBM_Cloud_Admin
+> conda info -e
+
 ## How to Use the Script
 
 To run the script, you can just type in:
