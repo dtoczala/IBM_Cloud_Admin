@@ -26,6 +26,7 @@ Once [Anaconda](https://anaconda.org/) is installed on your system, you will wan
 This creates a new environment, which you will need to switch to before trying to run the IBM_CLoud_Admin tool.  This environment has all of the proper Python packages downloaded and installed.  To run the IBM_Cloud_Admin tool, make sure that you first do the following:
 
 > source activate IBM_Cloud_Admin
+
 > conda info -e
 
 ## How to Use the Script
