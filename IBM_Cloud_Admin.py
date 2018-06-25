@@ -1,4 +1,9 @@
 #!/usr/bin/python
+# -*- coding: ascii -*-
+#
+#
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # uses python 2.7
 #
 import os
@@ -453,7 +458,7 @@ def getPrevMonth(datestr):
 
 #################################################################
 #
-# Find Defaults - take the output from a BX target comand and populate the default
+# Find Defaults - take the output from a ibmcloud target comand and populate the default
 #                 settings for the IBM Cloud
 #
 def findDefaults():
@@ -462,9 +467,9 @@ def findDefaults():
     #
     global envAPIEndpoint,envRegion,envUser,envAccount,envResourceGroup,envOrg,envSpace
     #
-    # Execute the bx target command to get current default values
+    # Execute the ibmcloud target command to get current default values
     #
-    cmd = "bx target"
+    cmd = "ibmcloud target"
     errout = ExecCmd_Output(cmd)
     #
     # Take input string - parse it and find the values
@@ -509,7 +514,7 @@ def shortAcctName():
     #
     global envAccount
     #
-    # Execute the bx target command to get current default values
+    # Execute the ibmcloud target command to get current default values
     #
     if (len(envAccount) > 10):
         shortName = str(envAccount[0:9])
@@ -530,7 +535,7 @@ def shortAcctName():
 
 #################################################################
 #
-# Parse Bx Version - get a list of account names, with potential
+# Parse ibmcloud Version - get a list of account names, with potential
 #                       account names to choose from
 #
 def parseBxVersion(bxVersion):
@@ -546,7 +551,7 @@ def parseBxVersion(bxVersion):
     #
     # Take input text stream - and parse it via regex
     #
-    # Looking to parse like this : bx version <version>.<major>.<minor>+other text
+    # Looking to parse like this : ibmcloud version <version>.<major>.<minor>+other text
     #
     metaVersion = re.search(r'version\s*([\d.]+)',bxVersion).group(1)
     (sversion, smajor, sminor) = metaVersion.split('.')
@@ -568,11 +573,11 @@ def parseBxVersion(bxVersion):
 #
 def IBMCloudLogin(user,pw,token,api_endpoint):
     flag = True
-    badVersion = "This script supports IBM Cloud CLI version 0.6.7 only."
+    badVersion = "This script supports IBM Cloud CLI version 0.7.1 only."
     #
     # See if the Bluemix CLI is installed
     #
-    cmd = "bx --version"
+    cmd = "ibmcloud --version"
     errout = ExecCmd_Output(cmd)
     #
     # Check version of IBM Cloud CLI
@@ -582,22 +587,23 @@ def IBMCloudLogin(user,pw,token,api_endpoint):
     # Error message and flag if not supported version
     # We are supporting version 0.6.7
     #
-    if ((version != 0) or (major != 6) or (minor != 7)):
+    if ((version != 0) or (major != 7) or (minor != 1)):
         print ("ERROR - " + str(badVersion))
+        print("ERROR - " + str(badVersion) + "\n Current version is - " + str(version) + "." + str(major) + "." + str(minor))
         MyLogging("ERROR - " + str(badVersion) + "\n Current version is - " + str(version) + "." + str(major) + "." + str(minor))
         flag = False
     #
     # Log into the IBM Cloud - First set API endpoint
     #
-    cmd = "bx api " + api_endpoint
+    cmd = "ibmcloud api " + api_endpoint
     errout = ExecCmd_Output(cmd)
     #
     # Log into IBM Cloud with either token or username/pw
     #
     if (cloudToken == ""):
-        cmd = "bx login -u " + str(cloudUser) + " -p " + str(cloudPwd)
+        cmd = "ibmcloud login -u " + str(cloudUser) + " -p " + str(cloudPwd)
     else:
-        cmd = "bx login --apikey @" + str(cloudToken)
+        cmd = "ibmcloud login --apikey @" + str(cloudToken)
     #
     errout = ExecCmd_Output(cmd)
     #
@@ -606,10 +612,10 @@ def IBMCloudLogin(user,pw,token,api_endpoint):
     if (("ERROR (ExecCmd_Output)" in errout) or (errout == "")):
         flag = False
     #
-    # Need to do a bx target command pointed at CloudFoundry to set intitial
+    # Need to do a ibmcloud target command pointed at CloudFoundry to set intitial
     # account conditions
     #
-    cmd = "bx target --cf"
+    cmd = "ibmcloud target --cf"
     errout = ExecCommand(cmd)
     #errout = ExecCmd_Output(cmd)
     #
@@ -693,7 +699,7 @@ def setRegion(newRegion):
     #
     # Run the IBM Cloud command to set the region
     #
-    cmd = "bx target -r " + newRegion
+    cmd = "ibmcloud target -r " + newRegion
     errout = ExecCmd_Output(cmd)
     #
     # Repopulate current settings
@@ -780,6 +786,58 @@ def parseAccountOrgs(myList):
                    #candidateOrg = eachLine[0:39].rstrip()
                    candidateOrg = candidateList[0]
                    retValue = retValue + [candidateOrg]
+    #
+    # Remove duplicate entries in list
+    #
+    retValue = list(set(retValue))
+    #
+    # Return list of valid GUID's and account names
+    #
+    return retValue
+
+#################################################################
+#
+# Parse Account Resource Groups -  get a list of account resource
+#                                  group names
+#
+def parseAccountResourceGroups(myList):
+    #
+    # initialize return array
+    #
+    retValue = []
+    lineNum = 0
+    #
+    # Take input text stream - and process it line by line
+    #
+    for eachLine in myList.split('\n'):
+        lineNum = lineNum + 1
+        #
+        # Skip the first three lines
+        #
+        if (lineNum > 3):
+            #
+            # Check the first array element - split on consectutive whitespace characters
+            #
+            #candidateList = eachLine.split()
+            candidateList = re.split(r'\s{2,}', eachLine)
+            if (candidateList != []):
+                #
+                # If we have an org, store as the next entry in your list
+                #
+                # Check output length - if greater than 40 then we have a new entry
+                #
+                tmpLen = len(eachLine)
+                if (tmpLen > 4):
+                   #
+                   # Save first 40 characters, strip off trailing whitespace
+                   #
+                   #candidateOrg = eachLine[0:39].rstrip()
+                   candidateOrg = candidateList[0]
+                   retValue = retValue + [candidateOrg]
+    #
+    # Remove duplicate entries in list
+    #
+    retValue = list(set(retValue))
     #
     # Return list of valid GUID's and account names
     #
@@ -957,7 +1015,7 @@ def processAcctOrgs(csvoutfile,org,region):
     #
     # Run the command to show all orgs
     #
-    cmd = "bx account org-users " + DBLQUOTE + str(org) + DBLQUOTE
+    cmd = "ibmcloud account org-users " + DBLQUOTE + str(org) + DBLQUOTE
     txtout = ExecCmd_Output(cmd)
     #
     # Parse the returned data
@@ -1092,7 +1150,7 @@ def processAcctSpaces(csvoutfile,org,space,region):
     #
     # Run the command to show all orgs
     #
-    cmd = "bx account space-users " + DBLQUOTE + str(org) + DBLQUOTE + " " + DBLQUOTE + str(space) + DBLQUOTE
+    cmd = "ibmcloud account space-users " + DBLQUOTE + str(org) + DBLQUOTE + " " + DBLQUOTE + str(space) + DBLQUOTE
     txtout = ExecCmd_Output(cmd)
     #
     # Parse the returned data
@@ -1180,7 +1238,7 @@ def processAcctSpaces(csvoutfile,org,space,region):
         # Dump entry to CSV file
         #
         stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpUserID,tmpAcctState,tmpAcctRole,tmpRegion,tmpOrg,tmpSpace,tmpOrgMgr,tmpOrgBillMgr, tmpOrgAuditor,tmpSpaceMgr,tmpSpaceDev,tmpSpaceAud)
-    
+
     #
     # Return status
     #
@@ -1252,7 +1310,7 @@ def processJsonDetails(jsonout, csvoutfile):
     tmpOrg = str(jsonout['org'].encode('utf-8','ignore'))
     tmpSpace = ""
     tmpBillable = ""
-    tmpType = ""
+    tmpType = "CF service instance"
     tmpResourceID = ""
     tmpName = ""
     tmpUnits = ""
@@ -1268,6 +1326,68 @@ def processJsonDetails(jsonout, csvoutfile):
         tmpAcctId = str(myrecs['account_id'].encode('utf-8','ignore'))
         thisRegion = str(myrecs['organization_id'].encode('utf-8','ignore'))
         (tmpRegion, junk) = thisRegion.split(":")
+        #
+        # CLI is returning "blanK" entries for details records, and these
+        # have null values for spaces.  Jump out when this happens.
+        #
+        if (myrecs['resources'] is None):
+            continue
+        #
+        for resource in myrecs['resources']:
+            tmpResourceID = str(resource['resource_id'].encode('utf-8','ignore'))
+            tmpName = str(resource['resource_name'].encode('utf-8','ignore'))
+            #
+            for plan in resource['plans']:
+                tmpBillable = str(plan['billable'])
+                tmpSpace = str(plan['plan_name'].encode('utf-8','ignore'))
+                tmpType = " "
+                #
+                for usagefld in plan['usage']:
+                    tmpUnits = str(usagefld['metric'].encode('utf-8','ignore'))
+                    tmpQuantity = str(usagefld['quantity'])
+                    tmpCost = str(usagefld['cost'])
+                    #
+                    # Dump entry to CSV file
+                    #
+                    stat = writeCSVDetailRecord(csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,tmpBillable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost,"")
+    #
+    # Return list of valid space names
+    #
+    return stat
+
+#################################################################
+#
+# ProcessRgJsonDetails -  process the JSON account resource group details info, and
+#                       dump a series of CSV file rows to a data file
+#                       reflecting usage indicated in the JSON account
+#                       org detail information.
+#
+def processRgJsonDetails(jsonout, csvoutfile):
+    #
+    # initialize
+    #
+    stat = ""
+    tmpAcctId = ""
+    tmpDate = str(jsonout['date'].encode('utf-8','ignore'))
+    tmpRegion = ""
+    tmpOrg = str(jsonout['Resource_Group'].encode('utf-8','ignore'))
+    tmpSpace = ""
+    tmpBillable = ""
+    tmpType = "Resource Group"
+    tmpResourceID = ""
+    tmpName = ""
+    tmpUnits = ""
+    tmpQuantity = ""
+    tmpCost = ""
+    # writeCSVDetailRecord (csvoutfile,tmpAcctId,tmpDate,tmpRegion,tmpOrg,tmpSpace,Billable,tmpType,tmpResourceID,tmpName,tmpUnits,tmpQuantity, tmpCost)
+    #
+    # Take input JSON - and process it structure by structure
+    #
+    # Loop thru all resources entries
+    #
+    for myrecs in jsonout['records']:
+        tmpAcctId = str(myrecs['account_id'].encode('utf-8','ignore'))
+        tmpRegion = str(myrecs['resource_group_id'].encode('utf-8','ignore'))
         #
         # CLI is returning "blanK" entries for details records, and these
         # have null values for spaces.  Jump out when this happens.
@@ -1327,7 +1447,7 @@ def bx_add_users_to_acct(userList):
         #
         # Build command to et access for this user
         #
-        cmd = "bx account user-invite " + str(userId)
+        cmd = "ibmcloud account user-invite " + str(userId)
         errout = ExecCmd_Output(cmd)
         #
         # See if we had an error
@@ -1379,7 +1499,7 @@ def bx_add_users_to_acct_space(userList,acctRole):
     #
     # Run the command to show current orgs
     #
-    cmd = "bx account orgs"
+    cmd = "ibmcloud account orgs -r all"
     errout = ExecCmd_Output(cmd)
     if (errout != ""):
         #
@@ -1397,12 +1517,12 @@ def bx_add_users_to_acct_space(userList,acctRole):
     #
     # Set to the new org
     #
-    cmd = "bx target -o " + DBLQUOTE + str(newOrg) + DBLQUOTE
+    cmd = "ibmcloud target -o " + DBLQUOTE + str(newOrg) + DBLQUOTE
     errout = ExecCmd_Output(cmd)
     #
     # Run the command to show current spaces
     #
-    cmd = "bx account spaces"
+    cmd = "ibmcloud account spaces"
     errout = ExecCmd_Output(cmd)
     if (errout == ""):
         #
@@ -1428,17 +1548,17 @@ def bx_add_users_to_acct_space(userList,acctRole):
         #
         # Build command to set org access for this user
         #
-        cmd = "bx account org-user-add " + str(userId) + " " + DBLQUOTE + str(newOrg) + DBLQUOTE
+        cmd = "ibmcloud account org-user-add " + str(userId) + " " + DBLQUOTE + str(newOrg) + DBLQUOTE
         errout = ExecCmd_Output(cmd)
         #
         # Build command to set org role for this user
         #
-        cmd = "bx account org-role-set " + str(userId) + " " + DBLQUOTE + str(newOrg) + DBLQUOTE + " " + str(orgRole)
+        cmd = "ibmcloud account org-role-set " + str(userId) + " " + DBLQUOTE + str(newOrg) + DBLQUOTE + " " + str(orgRole)
         errout = ExecCmd_Output(cmd)
         #
         # Build command to set space role for this user
         #
-        cmd = "bx account space-role-set " + str(userId) + " " + DBLQUOTE + str(newOrg) + DBLQUOTE + " " + DBLQUOTE + str(newSpace) + DBLQUOTE + " " + str(spaceRole)
+        cmd = "ibmcloud account space-role-set " + str(userId) + " " + DBLQUOTE + str(newOrg) + DBLQUOTE + " " + DBLQUOTE + str(newSpace) + DBLQUOTE + " " + str(spaceRole)
         errout = ExecCmd_Output(cmd)
 
     #
@@ -1479,7 +1599,7 @@ def bx_add_users_to_acctorg(userList,acctRole):
     #
     # Run the command to show current orgs
     #
-    cmd = "bx account orgs"
+    cmd = "ibmcloud account orgs -r all"
     errout = ExecCmd_Output(cmd)
     if (errout == ""):
         #
@@ -1497,7 +1617,7 @@ def bx_add_users_to_acctorg(userList,acctRole):
     #
     # Set to the new org
     #
-    cmd = "bx target -o " + DBLQUOTE + str(newOrg) + DBLQUOTE
+    cmd = "ibmcloud target -o " + DBLQUOTE + str(newOrg) + DBLQUOTE
     errout = ExecCmd_Output(cmd)
     #
     # Loop thru user list
@@ -1506,12 +1626,12 @@ def bx_add_users_to_acctorg(userList,acctRole):
         #
         # Build command to set org access for this user
         #
-        cmd = "bx account org-user-add " + str(userId) + " " + DBLQUOTE + str(newOrg) + DBLQUOTE
+        cmd = "ibmcloud account org-user-add " + str(userId) + " " + DBLQUOTE + str(newOrg) + DBLQUOTE
         errout = ExecCmd_Output(cmd)
         #
         # Build command to set org role for this user
         #
-        cmd = "bx account org-role-set " + str(userId) + " " + DBLQUOTE + str(newOrg) + DBLQUOTE + " " + str(orgRole)
+        cmd = "ibmcloud account org-role-set " + str(userId) + " " + DBLQUOTE + str(newOrg) + DBLQUOTE + " " + str(orgRole)
         errout = ExecCmd_Output(cmd)
     #
     # Return status
@@ -1555,7 +1675,7 @@ def bx_add_users_to_all_spaces(userList,acctRole):
     #
     # Run the command to show current orgs
     #
-    cmd = "bx account orgs"
+    cmd = "ibmcloud account orgs -r all"
     errout = ExecCmd_Output(cmd)
     if (errout == ""):
         #
@@ -1573,12 +1693,12 @@ def bx_add_users_to_all_spaces(userList,acctRole):
     #
     # Set to the new org
     #
-    cmd = "bx target -o " + DBLQUOTE + str(newOrg) + DBLQUOTE
+    cmd = "ibmcloud target -o " + DBLQUOTE + str(newOrg) + DBLQUOTE
     errout = ExecCmd_Output(cmd)
     #
     # Run the command to show current spaces
     #
-    cmd = "bx account spaces"
+    cmd = "ibmcloud account spaces"
     errout = ExecCmd_Output(cmd)
     if (errout == ""):
         #
@@ -1596,12 +1716,12 @@ def bx_add_users_to_all_spaces(userList,acctRole):
         #
         # Build command to set org access for this user
         #
-        cmd = "bx account org-user-add " + str(userId) + " " + DBLQUOTE + str(newOrg) + DBLQUOTE
+        cmd = "ibmcloud account org-user-add " + str(userId) + " " + DBLQUOTE + str(newOrg) + DBLQUOTE
         errout = ExecCmd_Output(cmd)
         #
         # Build command to set org role for this user
         #
-        cmd = "bx account org-role-set " + str(userId) + " " + DBLQUOTE + str(newOrg) + DBLQUOTE + " " + str(orgRole)
+        cmd = "ibmcloud account org-role-set " + str(userId) + " " + DBLQUOTE + str(newOrg) + DBLQUOTE + " " + str(orgRole)
         errout = ExecCmd_Output(cmd)
         #
         # Loop thru every space under this org
@@ -1610,9 +1730,9 @@ def bx_add_users_to_all_spaces(userList,acctRole):
             #
             # Build command to set space role for this user
             #
-            cmd = "bx account space-role-set " + str(userId) + " " + DBLQUOTE + str(newOrg) + DBLQUOTE + " " + DBLQUOTE + str(thisSpace) + DBLQUOTE + " " + str(spaceRole)
+            cmd = "ibmcloud account space-role-set " + str(userId) + " " + DBLQUOTE + str(newOrg) + DBLQUOTE + " " + DBLQUOTE + str(thisSpace) + DBLQUOTE + " " + str(spaceRole)
             errout = ExecCmd_Output(cmd)
-    
+
     #
     # Return status
     #
@@ -1626,7 +1746,7 @@ def bx_add_users_to_all_spaces(userList,acctRole):
 # Main menu
 def main_menu():
     os.system('clear')
-    
+
     print ("Welcome to the BM Cloud Admin tool,")
     print ("Please choose the menu you want to execute:")
     print ("1. Show IBM Cloud context and default settings")
@@ -1640,7 +1760,7 @@ def main_menu():
     print ("\n0. Quit")
     choice = raw_input(" >>  ")
     exec_menu(choice)
-    
+
     return
 
 # Execute menu
@@ -1687,7 +1807,7 @@ def bx_account_orgs():
     #
     # Run the command to show all orgs
     #
-    cmd = "bx account orgs"
+    cmd = "ibmcloud account orgs -r all"
     errout = ExecCmd_Output(cmd)
     #
     # Parse the accounts provided, returns a list of orgs
@@ -1717,9 +1837,9 @@ def bx_billing_summary(datestr,jsonflag):
     # Run the command to show all orgs
     #
     if jsonflag:
-        cmd = "bx billing account-usage -d " + str(datestr) + " --json"
+        cmd = "ibmcloud billing account-usage -d " + str(datestr) + " --json"
     else:
-        cmd = "bx billing account-usage -d " + str(datestr)
+        cmd = "ibmcloud billing account-usage -d " + str(datestr)
     #
     # Execute command
     #
@@ -1734,8 +1854,26 @@ def bx_account_users():
     #
     # Run the command to show all users
     #
-    cmd = "bx account users"
+    cmd = "ibmcloud account users"
     #
+    # Execute command
+    #
+    errout = ExecCmd_Output(cmd)
+    #
+    # Just return results
+    #
+    return errout
+
+# Show all account resource groups
+def bx_billing_rg_detail(orgname,datestr,jsonflag):
+    #
+    # Run the command to show all orgs
+    #
+    if jsonflag:
+        cmd = "ibmcloud billing resource-group-usage " + DBLQUOTE + str(orgname) + DBLQUOTE + " -d " + str(datestr) + " --json"
+    else:
+        cmd = "ibmcloud billing resource-group-usage " + DBLQUOTE + str(orgname) + DBLQUOTE + " -d " + str(datestr)
+    #ibmcloud
     # Execute command
     #
     errout = ExecCmd_Output(cmd)
@@ -1750,10 +1888,10 @@ def bx_billing_detail(orgname,datestr,jsonflag):
     # Run the command to show all orgs
     #
     if jsonflag:
-        cmd = "bx billing org-usage " + DBLQUOTE + str(orgname) + DBLQUOTE + " -d " + str(datestr) + " --json"
+        cmd = "ibmcloud billing org-usage " + DBLQUOTE + str(orgname) + DBLQUOTE + " -d " + str(datestr) + " --json"
     else:
-        cmd = "bx billing org-usage " + DBLQUOTE + str(orgname) + DBLQUOTE + " -d " + str(datestr)
-    #
+        cmd = "ibmcloud billing org-usage " + DBLQUOTE + str(orgname) + DBLQUOTE + " -d " + str(datestr)
+    #ibmcloud
     # Execute command
     #
     errout = ExecCmd_Output(cmd)
@@ -1820,9 +1958,11 @@ def show_billing_summary_json():
     #
     writeTextFile(outfile,errout)
     #
-    # Store json in a data structure - we'll dig into it later
+    # Store json in a data structure - we'll dig into it next
     #
-    jsonout = json.loads(errout)
+    jsonout = {}
+    if ("{" in errout):
+        jsonout = json.loads(errout)
     #
     # Add in a date field
     #
@@ -1869,7 +2009,7 @@ def show_billing_detail():
     #
     # Run the command to show all orgs
     #
-    cmd = "bx account orgs"
+    cmd = "ibmcloud account orgs -r all"
     errout = ExecCmd_Output(cmd)
     #
     # Parse the accounts provided, returns a list of orgs
@@ -1882,7 +2022,38 @@ def show_billing_detail():
         #
         # Run the command to show org usage
         #
+        MyLogging("Process " + str(eachOption) + " ...")
+        print("Process " + str(eachOption) + " ...")
         errout = bx_billing_detail(str(eachOption),todaystr,False)
+        #
+        # Just dump output
+        #
+        writeTextFile(outfile,"\n")
+        writeTextFile(outfile,"======================================================================\n")
+        writeTextFile(outfile,"======================================================================\n")
+        writeTextFile(outfile,"= Billing details for " + str(eachOption) + "\n")
+        writeTextFile(outfile,"======================================================================\n")
+        writeTextFile(outfile,errout)
+        writeTextFile(outfile,"\n")
+    #
+    # Run the command to show all orgs
+    #
+    cmd = "ibmcloud resource groups"
+    errout = ExecCmd_Output(cmd)
+    #
+    # Parse the accounts provided, returns a list of orgs
+    #
+    optionList = parseAccountResourceGroups(errout)
+    #
+    # Loop thru entries in org list
+    #
+    for eachOption in optionList:
+        #
+        # Run the command to show org usage
+        #
+        MyLogging("Process " + str(eachOption) + " ...")
+        print("Process " + str(eachOption) + " ...")
+        errout = bx_billing_rg_detail(str(eachOption),todaystr,False)
         #
         # Just dump output
         #
@@ -1923,11 +2094,11 @@ def show_billing_detail_json():
     #
     csvfilename = str(shortAcctName()) + "_billing_by_org.csv"
     csvoutfile = openCsvFile(csvfilename)
-    writeCSVDetailRecord(csvoutfile, 'Account ID','Date','Region','Org','Space','Billable','Type','Resource ID','Name','Units','Quantity','Cost',' ')
+    writeCSVDetailRecord(csvoutfile, 'Account ID','Date','Region/Resource Grp. ID','Org/Resource Group','Plan','Billable','Type','Resource ID','Name','Units','Quantity','Cost',' ')
     #
     # Run the command to show all orgs
     #
-    cmd = "bx account orgs"
+    cmd = "ibmcloud account orgs -r all"
     errout = ExecCmd_Output(cmd)
     #
     # Parse the accounts provided, returns a list of orgs
@@ -1941,6 +2112,8 @@ def show_billing_detail_json():
         #
         # Run the command to show org usage
         #
+        MyLogging("Process " + str(eachOption) + " ...")
+        print("Process " + str(eachOption) + " ...")
         fixout = bx_billing_detail(str(eachOption),todaystr,True)
         #
         # Add org name and date
@@ -1961,11 +2134,60 @@ def show_billing_detail_json():
         #
         # Store json in a data structure - we'll dig into it later
         #
-        jsonout = json.loads(errout)
+        jsonout = {}
+        if ("{" in errout):
+            jsonout = json.loads(errout)
         #
         # Process JSON account details data
         #
         processJsonDetails(jsonout, csvoutfile)
+    #
+    # Run the command to show all resource groups
+    #
+    cmd = "ibmcloud resource groups"
+    errout = ExecCmd_Output(cmd)
+    #
+    # Parse the accounts provided, returns a list of orgs
+    #
+    optionList = parseAccountResourceGroups(errout)
+    #
+    # Loop thru entries in org list
+    #
+    for eachOption in optionList:
+        #
+        # Run the command to show org usage
+        #
+        MyLogging("Process " + str(eachOption) + " ...")
+        print("Process " + str(eachOption) + " ...")
+        fixout = bx_billing_rg_detail(str(eachOption),todaystr,True)
+        if (fixout == ""):
+                fixout = "\"\" "
+        #
+        # Add org name and date
+        #
+        errout = "{ \"Resource_Group\": \"" + str(eachOption) + "\",\n  \"date\": \"" + str(todaystr) + "\",\n  \"records\": " + fixout + "} \n"
+        #
+        # Just dump output to json file
+        #
+        if firstLine:
+            writeTextFile(outfile,errout)
+            firstLine = False
+        else:
+            #
+            # Need to split up the JSON elements with commas
+            #
+            fixedout = ",\n" + errout
+            writeTextFile(outfile,fixedout)
+        #
+        # Store json in a data structure - we'll dig into it later
+        #
+        jsonout = {}
+        if ("{" in errout):
+            jsonout = json.loads(errout)
+        #
+        # Process JSON account details data
+        #
+        processRgJsonDetails(jsonout, csvoutfile)
     #
     # Close the output
     #
@@ -1994,80 +2216,143 @@ def show_annual_billing_detail_json():
     #
     csvfilename = str(shortAcctName()) + "_annual_billing_by_org.csv"
     csvoutfile = openCsvFile(csvfilename)
-    writeCSVDetailRecord(csvoutfile, 'Account ID','Date','Region','Org','Space','Billable','Type','Resource ID','Name','Units','Quantity','Cost',' ')
+    writeCSVDetailRecord(csvoutfile, 'Account ID','Date','Region/Resource Grp. ID','Org/Resource Group','Plan','Billable','Type','Resource ID','Name','Units','Quantity','Cost',' ')
     #
-    # Process each IBM Cloud region
+    # Run the command to show all orgs
     #
-    for myRegion, myAPI in API_ENDPOINTS.items():
+    cmd = "ibmcloud account orgs -r all"
+    errout = ExecCmd_Output(cmd)
+    #
+    # Parse the accounts provided, returns a list of orgs
+    #
+    optionList = parseAccountOrgs(errout)
+    firstLine = True
+    #
+    # Loop thru entries in org list
+    #
+    for eachOption in optionList:
        #
-       # Move into the next region
+       # Loop thru past 12 months
        #
-       stat = setRegion(myRegion)
-       #
-       # Run the command to show all orgs
-       #
-       cmd = "bx account orgs"
-       errout = ExecCmd_Output(cmd)
-       #
-       # Parse the accounts provided, returns a list of orgs
-       #
-       optionList = parseAccountOrgs(errout)
-       firstLine = True
-       #
-       # Loop thru entries in org list
-       #
-       for eachOption in optionList:
+       MyLogging("Process " + str(eachOption) + " ...\n")
+       print("Process " + str(eachOption) + " ...\n")
+       currdate = todaystr
+       for months in range(12):
           #
-          # Loop thru past 12 months
+          # Run the command to show org usage
           #
-          currdate = todaystr
-          for months in range(12):
+          fixout = bx_billing_detail(str(eachOption),currdate,True)
+          #
+          # Check for error messages (happens when looking for history that doesn't exist)
+          #
+          if ((fixout == "") or ("FAILED" in fixout)):
              #
-             # Run the command to show org usage
+             # Notify the user of the potential error condition
              #
-             fixout = bx_billing_detail(str(eachOption),currdate,True)
-             #
-             # Check for error messages (happens when looking for history that doesn't exist)
-             #
-             if ((fixout == "") or ("FAILED" in fixout)):
-                #
-                # Notify the user of the potential error condition
-                #
-                MyLogging ("Error pulling billing data for " + str(currdate) + ".")
-                currdate = getPrevMonth(currdate)
-                continue
-             #
-             # Add org name and date
-             #
-             errout = "{ \"org\": \"" + str(eachOption) + "\",\n  \"date\": \"" + str(currdate) + "\",\n  \"records\": " + fixout + "} \n"
-             #
-             # Just dump output to json file
-             #
-             if firstLine:
-                writeTextFile(outfile,errout)
-                firstLine = False
-                #
-                fixedout = ""
-             else:
-                #
-                # Need to split up the JSON elements with commas
-                #
-                fixedout = ",\n" + errout
-                writeTextFile(outfile,fixedout)
-             #
-             # Store json in a data structure - we'll dig into it later
-             #
-             jsonout = json.loads(errout)
-             #
-             # Process JSON account details data
-             #
-             processJsonDetails(jsonout, csvoutfile)
-             #
-             # Change date to previous month
-             #
+             MyLogging ("Error pulling billing data for " + str(currdate) + ".")
              currdate = getPrevMonth(currdate)
-             # End loop thru months
-          # end loop thru account orgs
+             continue
+          #
+          # Add org name and date
+          #
+          errout = "{ \"org\": \"" + str(eachOption) + "\",\n  \"date\": \"" + str(currdate) + "\",\n  \"records\": " + fixout + "} \n"
+          #
+          # Just dump output to json file
+          #
+          if firstLine:
+             writeTextFile(outfile,errout)
+             firstLine = False
+             #
+             fixedout = ""
+          else:
+             #
+             # Need to split up the JSON elements with commas
+             #
+             fixedout = ",\n" + errout
+             writeTextFile(outfile,fixedout)
+          #
+          # Store json in a data structure - we'll dig into it later
+          #
+          jsonout = {}
+          if ("{" in errout):
+             jsonout = json.loads(errout)
+          #
+          # Process JSON account details data
+          #
+          processJsonDetails(jsonout, csvoutfile)
+          #
+          # Change date to previous month
+          #
+          currdate = getPrevMonth(currdate)
+          # End loop thru months
+    #
+    # Run the command to show all resource groups
+    #
+    cmd = "ibmcloud resource groups"
+    errout = ExecCmd_Output(cmd)
+    #
+    # Parse the accounts provided, returns a list of orgs
+    #
+    optionList = parseAccountResourceGroups(errout)
+    #
+    # Loop thru entries in org list
+    #
+    for eachOption in optionList:
+       #
+       # Loop thru past 12 months
+       #
+       MyLogging("Process " + str(eachOption) + " ...\n")
+       print("Process " + str(eachOption) + " ...\n")
+       currdate = todaystr
+       for months in range(12):
+          #
+          # Run the command to show org usage
+          #
+          fixout = bx_billing_rg_detail(str(eachOption),currdate,True)
+          #
+          # Check for error messages (happens when looking for history that doesn't exist)
+          #
+          if ((fixout == "") or ("FAILED" in fixout)):
+             #
+             # Notify the user of the potential error condition
+             #
+             MyLogging ("Error pulling billing data for " + str(currdate) + ".")
+             currdate = getPrevMonth(currdate)
+             continue
+          #
+          # Add resource group name and date
+          #
+          errout = "{ \"Resource_Group\": \"" + str(eachOption) + "\",\n  \"date\": \"" + str(todaystr) + "\",\n  \"records\": " + fixout + "} \n"
+          #
+          # Just dump output to json file
+          #
+          if firstLine:
+             writeTextFile(outfile,errout)
+             firstLine = False
+             #
+             fixedout = ""
+          else:
+             #
+             # Need to split up the JSON elements with commas
+             #
+             fixedout = ",\n" + errout
+             writeTextFile(outfile,fixedout)
+          #
+          # Store json in a data structure - we'll dig into it later
+          #
+          jsonout = {}
+          if ("{" in errout):
+             jsonout = json.loads(errout)
+          #
+          # Process JSON account details data
+          #
+          processRgJsonDetails(jsonout, csvoutfile)
+          #
+          # Change date to previous month
+          #
+          currdate = getPrevMonth(currdate)
+       # End loop thru months
+    # end loop thru account resource groups
     #
     # Close the output
     #
@@ -2092,56 +2377,49 @@ def show_account_security():
     #
     csvfilename = str(shortAcctName()) + "_account_security.csv"
     csvoutfile = openCsvFile(csvfilename)
-    writeCSVDetailRecord(csvoutfile, 'Account ID','User ID','Acct. State','Acct. Role','Region','Organization','Space','Org Manager','Org Billing Manager','Org Auditor','Space Manager','Space Developer','Space Auditor')
+    writeCSVDetailRecord(csvoutfile, 'Account ID','User ID','Acct. State','Acct. Role','Region/Resource Group','Organization','Space','Org Manager','Org Billing Manager','Org Auditor','Space Manager','Space Developer','Space Auditor')
     #
-    # Process each IBM Cloud region
+    # Get overall account settings
     #
-    for myRegion, myAPI in API_ENDPOINTS.items():
+    errout = bx_account_users()
+    if ("ERROR" not in errout):
+       processAcctUsers(csvoutfile,errout,"")
+    #
+    # Run the command to show all orgs
+    #
+    cmd = "ibmcloud account orgs -r all"
+    errout = ExecCmd_Output(cmd)
+    #
+    # Parse the accounts provided, returns a list of orgs
+    #
+    orgList = parseAccountOrgs(errout)
+    #
+    # Loop thru entries in org list
+    #
+    for eachOrg in orgList:
        #
-       # Move into the next region
+       # Process the users and roles for this org
        #
-       #stat = IBMCloudLogin(cloudUser,cloudPwd,cloudToken,myAPI)
-       stat = setRegion(myRegion)
+       MyLogging("Process " + str(eachOrg) + " ...\n")
+       print("Process " + str(eachOrg) + " ...\n")
+       stat = processAcctOrgs(csvoutfile,eachOrg,"")
        #
-       # Get overall account settings
+       # Loop through each space in the org, get a list of them
        #
-       errout = bx_account_users()
-       if ("ERROR" not in errout):
-          processAcctUsers(csvoutfile,errout,myRegion)
-       #
-       # Run the command to show all orgs
-       #
-       cmd = "bx account orgs"
+       cmd = "ibmcloud account spaces -o " + DBLQUOTE + str(eachOrg) + DBLQUOTE
        errout = ExecCmd_Output(cmd)
        #
-       # Parse the accounts provided, returns a list of orgs
+       # Parse the accounts provided, returns a list of spaces
        #
-       orgList = parseAccountOrgs(errout)
+       spaceList = parseAccountSpaces(errout)
        #
-       # Loop thru entries in org list
+       # Loop through each space in the list
        #
-       for eachOrg in orgList:
+       for eachSpace in spaceList:
           #
-          # Process the users and roles for this org
+          # Process the users and roles for this space
           #
-          stat = processAcctOrgs(csvoutfile,eachOrg,myRegion)
-          #
-          # Loop through each space in the org, get a list of them
-          #
-          cmd = "bx account spaces -o " + DBLQUOTE + str(eachOrg) + DBLQUOTE
-          errout = ExecCmd_Output(cmd)
-          #
-          # Parse the accounts provided, returns a list of spaces
-          #
-          spaceList = parseAccountSpaces(errout)
-          #
-          # Loop through each space in the list
-          #
-          for eachSpace in spaceList:
-             #
-             # Process the users and roles for this space
-             #
-             stat = processAcctSpaces(csvoutfile,eachOrg,eachSpace,myRegion)
+          stat = processAcctSpaces(csvoutfile,eachOrg,eachSpace,"")
     #
     # End loop thru spaces , and end loop through orgs
     #
@@ -2186,7 +2464,9 @@ def show_annual_billing_summary_json():
         #
         # Store json in a data structure - we'll dig into it next
         #
-        jsonout = json.loads(errout)
+        jsonout = {}
+        if ("{" in errout):
+            jsonout = json.loads(errout)
         #
         # Add in a date field
         #
@@ -2219,7 +2499,7 @@ def bx_modify_group():
     #
     # Run the command to show current accounts
     #
-    cmd = "bx resource groups"
+    cmd = "ibmcloud resource groups"
     errout = ExecCmd_Output(cmd)
     if (errout == ""):
         #
@@ -2241,7 +2521,7 @@ def bx_modify_group():
         #
         # Update account
         #
-        cmd = "bx target -g " + str(newGroup)
+        cmd = "ibmcloud target -g " + str(newGroup)
         errout = ExecCmd_Output(cmd)
     #
     # Set current env values
@@ -2345,7 +2625,7 @@ def bx_modify_account():
     #
     # Run the command to show current accounts
     #
-    cmd = "bx account list"
+    cmd = "ibmcloud account list"
     errout = ExecCmd_Output(cmd)
     #
     # Parse the accounts provided, returns a list of tuples in (id option) format
@@ -2363,7 +2643,7 @@ def bx_modify_account():
         #
         # Update account
         #
-        cmd = "bx target -c " + str(newGUID)
+        cmd = "ibmcloud target -c " + str(newGUID)
         errout = ExecCmd_Output(cmd)
     else:
         #
@@ -2389,7 +2669,7 @@ def bx_modify_org():
     #
     # Run the command to show current orgs
     #
-    cmd = "bx account orgs"
+    cmd = "ibmcloud account orgs -r all"
     errout = ExecCmd_Output(cmd)
     if (errout == ""):
         #
@@ -2407,7 +2687,7 @@ def bx_modify_org():
     #
     # Update account
     #
-    cmd = "bx target -o " + DBLQUOTE + str(newOrg) + DBLQUOTE
+    cmd = "ibmcloud target -o " + DBLQUOTE + str(newOrg) + DBLQUOTE
     errout = ExecCmd_Output(cmd)
     #
     # Set current env values
@@ -2429,7 +2709,7 @@ def bx_modify_region():
     #
     # Update account
     #
-    cmd = "bx target -r " + str(newRegion)
+    cmd = "ibmcloud target -r " + str(newRegion)
     errout = ExecCmd_Output(cmd)
     #
     # Set current env values
@@ -2447,7 +2727,7 @@ def bx_modify_space():
     #
     # Run the command to show current accounts
     #
-    cmd = "bx account spaces"
+    cmd = "ibmcloud account spaces"
     errout = ExecCmd_Output(cmd)
     if (errout == ""):
         #
@@ -2469,7 +2749,7 @@ def bx_modify_space():
         #
         # Update account
         #
-        cmd = "bx target -s " + DBLQUOTE + str(newSpace) + DBLQUOTE
+        cmd = "ibmcloud target -s " + DBLQUOTE + str(newSpace) + DBLQUOTE
         errout = ExecCmd_Output(cmd)
     #
     # Set current env values
@@ -2487,7 +2767,7 @@ def bx_modify_group():
     #
     # Run the command to show current accounts
     #
-    cmd = "bx resource groups"
+    cmd = "ibmcloud resource groups"
     errout = ExecCmd_Output(cmd)
     if (errout == ""):
         #
@@ -2509,7 +2789,7 @@ def bx_modify_group():
         #
         # Update account
         #
-        cmd = "bx target -g " + str(newGroup)
+        cmd = "ibmcloud target -g " + str(newGroup)
         errout = ExecCmd_Output(cmd)
     #
     # Set current env values
@@ -2625,4 +2905,3 @@ if __name__ == "__main__":
     else:
         print ("ERROR - Invalid login - Error during IBM Cloud login")
         outputLog.write("ERROR - Invalid login - Error during IBM Cloud login")
-
