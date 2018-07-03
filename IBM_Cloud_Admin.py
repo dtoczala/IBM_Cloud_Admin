@@ -1539,6 +1539,7 @@ def bx_add_users_to_acct_space(userList,acctRole):
     if (optionList == []):
         print ("No valid spaces available")
         MyLogging("ERROR - No valid spaces available")
+        return stat
     else:
         newSpace = getUserOptions(optionList,"Select space to assign users to...")
     #
