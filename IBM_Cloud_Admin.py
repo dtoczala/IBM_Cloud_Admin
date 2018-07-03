@@ -394,7 +394,7 @@ def getUserCsvFile():
     # Get the input filename and filehandle
     #
     userList = []
-    print ("Enter name of file with accounts to be added")
+    print ("Enter name of file with account users listed")
     choice = raw_input(" >>  ")
     #
     # See if the file exists
@@ -707,7 +707,6 @@ def setRegion(newRegion):
     findDefaults()
     #
     return
-
 
 #################################################################
 #
@@ -1432,6 +1431,48 @@ def processRgJsonDetails(jsonout, csvoutfile):
 
 #################################################################
 #
+# bx_remove_users -  remove each of the input users in list from the account
+#
+#
+def bx_remove_users():
+    #
+    # initialize
+    #
+    stat = ""
+    userList = getUserCsvFile()
+    if (userList == []):
+        #
+        # Give an error message
+        #
+        print ("")
+        print ("ERROR - Unable to process CSV file")
+        print ("")
+        choice = raw_input("Hit return to continue....")
+        MyLogging("ERROR - Unable to process CSV file - Empty user list\n")
+        return
+    MyLogging("USER LIST is -" + str(userList) + "-\n")
+    successCount = 0
+    #
+    # Loop thru user list
+    #
+    for userId in userList:
+        #
+        # Build command to remove users from the account
+        #
+        cmd = "ibmcloud account user-remove " + str(userId)
+        errout = ExecCommand(cmd)
+
+        # Errors will be handled by ibmcloud commands and output to the user
+    #
+    # Print menu bottom
+    #
+    print ("9. Back")
+    print ("0. Quit")
+    choice = raw_input(" >>  ")
+    exec_menu(choice)
+
+#################################################################
+#
 # bx_add_users_to_acct -  add each of the input users in list to account with
 #                           the general role specified
 #
@@ -1758,6 +1799,7 @@ def main_menu():
     print ("6. Show Billing Detail by Org for past 12 months")
     print ("7. Show Account Security Settings for Users")
     print ("8. Add users to Account")
+    print ("u. Delete users from account")
     print ("\n0. Quit")
     choice = raw_input(" >>  ")
     exec_menu(choice)
@@ -2865,6 +2907,7 @@ menu_actions = {
     'o': bx_modify_org,
     'r': bx_modify_region,
     's': bx_modify_space,
+    'u': bx_remove_users,
     '9': back,
     '0': exit,
 }
