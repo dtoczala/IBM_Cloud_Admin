@@ -1,5 +1,5 @@
 # IBM_Cloud_Admin
-**Author: D. Toczala**
+**Author: [D. Toczala](https://github.com/dtoczala)**
 
 A simple Python script to do some basic IBM Cloud administrative tasks.
 
@@ -13,7 +13,7 @@ This is a guide to getting this tool properly installed on your system.  I have 
 
 In order to run this tool, you will need the latest version of the [IBM Cloud CLI](https://console.bluemix.net/docs/home/tools) installed on the system running this script.  If you want to, you can [install the CLI as a stand-alone install](https://console.bluemix.net/docs/cli/reference/ibmcloud/download_cli.html#install_use).
 
-This CLI is updated on a relatively frequent basis, and the author of this script will attempt to maintain the script with the current version of the CLI.  If you have not updated the CLI on your system, this script WILL HANG.  The CLI will be prompting you to ask if you would like to update the CLI, and it is awaiting a response.  You will need to go and update the CLI from the command line.  To do this, just log into the IBM Cloud with the CLI by issuing an IBM Cloud target command like this:
+This CLI is updated on a relatively frequent basis, and the [author of this script](https://github.com/dtoczala) will attempt to maintain the script with the current version of the CLI.  **If you have not updated the CLI on your system, this script WILL HANG**.  The CLI will be prompting you to ask if you would like to update the CLI, and it is awaiting a response.  You will need to go and update the CLI from the command line.  To do this, just log into the IBM Cloud with the CLI by issuing an IBM Cloud target command like this:
 
 > ibmcloud target -cf
 
