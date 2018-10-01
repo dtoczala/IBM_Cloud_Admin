@@ -3,11 +3,19 @@
 
 A simple Python script to do some basic IBM Cloud administrative tasks.
 
-This current script supports version 0.6.6. of the IBM Cloud CLI tool.  If you have 0.6.5. it will work with that as well, but you will need to disable the CLI version check in the code.
+This current script supports version 0.10.0. of the IBM Cloud CLI tool.  If you have 0.9.0. it will work with that as well, but you will need to disable the CLI version check in the code.
 
 ## Installation Guide
 
 This is a guide to getting this tool properly installed on your system.  I have a Macbook (iOS) system, so I have tested this out on iOS systems, but not on Wondows or Linux platforms.  The concepts and steps should be the same, but the paths and some syntax may change on those platforms.
+
+### Install the IBM Cloud CLI
+
+In order to run this tool, you will need the latest version of the [IBM Cloud CLI](https://console.bluemix.net/docs/home/tools) installed on the system running this script.  If you want to, you can [install the CLI as a stand-alone install](https://console.bluemix.net/docs/cli/reference/ibmcloud/download_cli.html#install_use).
+
+This CLI is updated on a relatively frequent basis, and the author of this script will attempt to maintain the script with the current version of the CLI.  If you have not updated the CLI on your system, this script WILL HANG.  The CLI will be prompting you to ask if you would like to update the CLI, and it is awaiting a response.  You will need to go and update the CLI from the command line.  To do this, just log into the IBM Cloud with the CLI by issuing an IBM Cloud target command like this:
+
+> ibmcloud target -cf
 
 ### Install Anaconda
 
